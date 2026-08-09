@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#3b82f6">
+  <title>KUHUL-ES Runtime</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./kuhulpi-micronaut.png">
+  <style>
+    :root {
+      --bg: #0a0a0a;
+      --panel: #141414;
+      --text: #e5e5e5;
+      --muted: #888;
+      --accent: #3b82f6;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --font: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); }
+    header { padding: 1rem; border-bottom: 1px solid #222; display: flex; align-items: center; gap: 1rem; }
+    header h1 { margin: 0; font-size: 1.25rem; }
+    header nav { display: flex; gap: 0.5rem; margin-left: auto; }
+    header nav button {
+      background: transparent; border: 1px solid #333; color: var(--text);
+      padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 4px;
+    }
+    header nav button.active { border-color: var(--accent); background: rgba(59,130,246,0.15); }
+    main { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 1rem; height: calc(100% - 70px); }
+    .panel { background: var(--panel); border: 1px solid #222; border-radius: 8px; padding: 1rem; display: flex; flex-direction: column; }
+    .panel h2 { margin: 0 0 0.75rem; font-size: 1rem; color: var(--accent); }
+    textarea, pre {
+      flex: 1; width: 100%; resize: none; border: 1px solid #333; border-radius: 4px;
+      background: #0d0d0d; color: var(--text); padding: 0.75rem; font-family: var(--font); font-size: 0.875rem;
+    }
+    .toolbar { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+    button.primary {
+      background: var(--accent); border: none; color: #fff; padding: 0.5rem 1rem;
+      border-radius: 4px; cursor: pointer; font-weight: 600;
+    }
+    button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .status { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; }
+    .sw-offline { color: var(--ok); }
+    .sw-online { color: var(--warn); }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; height: auto; } }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⟁ KUHUL-ES Runtime</h1>
+    <span id="sw-status" class="status">checking service worker…</span>
+    <span id="pcre2-status" class="status">PCRE2: unknown</span>
+    <nav>
+      <button class="active" data-tab="run">Run</button>
+      <button data-tab="kxml">KXML</button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel" id="editor-panel">
+      <h2>Source (.kuhules)</h2>
+      <textarea id="source" spellcheck="false">
+π task = "finish training";
+
+function* main() {
+  yield* Pop('init');
+  yield* Noj('goal: ' + task, { observe: true });
+  yield* Sek('log', 'done');
+  yield* Xul();
+}
+
+main();
+      </textarea>
+      <div class="toolbar">
+        <button class="primary" id="btn-run">Execute</button>
+        <button class="primary" id="btn-sw-run" disabled>Execute via SW</button>
+      </div>
+    </section>
+
+    <section class="panel" id="output-panel">
+      <h2>Trace</h2>
+      <pre id="output">// output appears here</pre>
+      <div class="status" id="meta"></div>
+    </section>
+  </main>
+
+  <script type="module">
+    import { KUHULRuntime } from './runtime/src/browser.js';
+
+    const source = document.getElementById('source');
+    const output = document.getElementById('output');
+    const meta = document.getElementById('meta');
+    const btnRun = document.getElementById('btn-run');
+    const btnSwRun = document.getElementById('btn-sw-run');
+    const swStatus = document.getElementById('sw-status');
+
+    function log(line) {
+      output.textContent += line + '\n';
+    }
+
+    async function runLocal() {
+      output.textContent = '';
+      const rt = new KUHULRuntime();
+      rt.on('log', (msg) => log('[LOG] ' + msg));
+      rt.on('thoughts', (thoughts) => {
+        for (const t of thoughts) log(`[Noj] ${t.proposition}`);
+      });
+      try {
+        await rt.execute(source.value);
+        meta.textContent = `frames: ${rt.frame} | hashes: ${rt.hashChain.length} | thoughts: ${rt.thinker.thoughts.length}`;
+      } catch (e) {
+        log('ERROR: ' + e.message);
+      }
+    }
+
+    // Service worker registration
+    let swReady = false;
+    let msgId = 0;
+    const pending = new Map();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./sw.js', { type: 'module' })
+        .then((reg) => {
+          swStatus.textContent = 'service worker registered';
+          swStatus.className = 'status sw-online';
+          swReady = true;
+          btnSwRun.disabled = false;
+
+          // Query SW for PCRE2 health status (if controller/active exists)
+          try {
+            const p = document.getElementById('pcre2-status');
+            if (p) p.textContent = 'PCRE2: loading...';
+            if (reg.active) reg.active.postMessage({ type: 'PCRE2_QUERY' });
+            else if (navigator.serviceWorker.controller) navigator.serviceWorker.controller.postMessage({ type: 'PCRE2_QUERY' });
+          } catch (e) { /* ignore */ }
+        })
+        .catch((err) => {
+          swStatus.textContent = 'service worker failed: ' + err.message;
+          swStatus.className = 'status';
+        });
+
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        const { type, id, result, error, ok, source } = event.data || {};
+        if (type === 'KUHUL_RESULT' && pending.has(id)) {
+          pending.get(id)({ result, error });
+          pending.delete(id);
+          return;
+        }
+        if (type === 'PCRE2_STATUS') {
+          const p = document.getElementById('pcre2-status');
+          if (!p) return;
+          if (ok) {
+            if (event.data.ready) {
+              p.textContent = 'PCRE2: ready (' + (source || 'local') + ')';
+              p.className = 'status sw-offline';
+            } else {
+              p.textContent = 'PCRE2: loading (' + (source || 'local') + ')';
+              p.className = 'status';
+            }
+          } else {
+            p.textContent = 'PCRE2: not available — native RegExp fallback';
+            p.className = 'status sw-online';
+          }
+        }
+      });
+    } else {
+      swStatus.textContent = 'service worker not supported';
+    }
+
+    async function runViaSW() {
+      if (!swReady) return;
+      output.textContent = '';
+      const id = ++msgId;
+      const controller = navigator.serviceWorker.controller;
+      if (!controller) {
+        log('ERROR: service worker controller not ready. Reload the page.');
+        return;
+      }
+      const promise = new Promise((resolve) => pending.set(id, resolve));
+      controller.postMessage({ type: 'KUHUL_EXECUTE', id, payload: { source: source.value } });
+      const { result, error } = await promise;
+      if (error) {
+        log('ERROR: ' + error.message);
+        return;
+      }
+      for (const t of result.thoughts || []) log(`[Noj] ${t.proposition}`);
+      meta.textContent = `frames: ${result.frame} | hashes: ${result.hashChain.length} | thoughts: ${result.thoughts.length}`;
+    }
+
+    btnRun.addEventListener('click', runLocal);
+    btnSwRun.addEventListener('click', runViaSW);
+  </script>
+</body>
+</html>

@@ -1,11 +1,18 @@
 {
   "name": "kuhul-es",
-  "version": "1.0.18",
+  "version": "1.4.0",
   "main": "src/index.js",
+  "browser": "runtime/src/browser.js",
   "bin": {
     "kuhul-es": "bin/kuhul-es.js"
   },
   "scripts": {
+    "test": "node --test test/*.test.js",
+    "build": "echo 'No build step required; runtime is plain CommonJS'",
+    "build:pcre2": "node scripts/copy-pcre2.js",
+    "prepare-pcre2": "node scripts/copy-pcre2.js || true",
+    "postinstall": "npm run build:pcre2",
+    "start": "node bin/kuhul-es.js",
     "doctor": "node -e \"require('fs').accessSync('bin/kuhul-es.js'); console.log('CLI OK')\""
   },
   "files": [
@@ -13,13 +20,26 @@
     "src/",
     "runtime/",
     "compiler/",
+    "kxml/",
+    "pcre2/",
+    "index.html",
+    "manifest.webmanifest",
+    "browser.manifest.json",
+    "sw.js",
+    "kuhulpi-micronaut.png",
     "README.md",
     "license.md"
   ],
   "engines": {
-    "node": ">=14"
+    "node": ">=18"
   },
   "dependencies": {
-    "commander": "^11.0.0"
-  }
+    "@ofjansen/pcre2-wasm": "^1.4.0",
+    "commander": "^11.0.0",
+    "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0"
+  },
+  "description": "K'UHUL-ES — ECMAScript syntax, K'UHUL semantics + physics + thinking + KXML inference"
 }

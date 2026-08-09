@@ -1,0 +1,33 @@
+{
+  "name": "KUHUL-ES Runtime",
+  "short_name": "kuhul-es",
+  "description": "K'UHUL-ES browser runtime: deterministic physics-first execution, thinking engine, and KXML inference.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#3b82f6",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "kuhulpi-micronaut.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["developer", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Run KUHUL",
+      "short_name": "Run",
+      "description": "Open the runtime playground",
+      "url": "./index.html?tab=run"
+    },
+    {
+      "name": "KXML Models",
+      "short_name": "KXML",
+      "description": "Open KXML model inference",
+      "url": "./index.html?tab=kxml"
+    }
+  ]
+}

@@ -18,6 +18,7 @@ export class KUHULParser {
   private glyphCalls: Array<{glyph: string, args: any[]}> = [];
   
   constructor(source: string, filename: string = 'source.kuhul') {
+    this.source = source;
     this.sourceFile = ts.createSourceFile(
       filename,
       source,
@@ -37,6 +38,23 @@ export class KUHULParser {
     };
     
     this.visitNode(this.sourceFile, program);
+
+    // regex fallback: `pi X = v;` / `tau X = v;` do not parse as TS variable
+    // statements (bare `pi` splits into two expression statements), so extract
+    // them from the raw source like the runtime does.
+    const piRe = /(?:π|pi)\s+([A-Za-z_]\w*)\s*=\s*([^;]+)/g;
+    for (const m of this.source.matchAll(piRe)) {
+      if (!program.πBindings.has(m[1])) {
+        program.πBindings.set(m[1], { value: this.evaluateText(m[2].trim()), immutable: true, source: m[0], position: m.index });
+      }
+    }
+    const tauRe = /(?:τ|tau)\s+([A-Za-z_]\w*)\s*=\s*([^;]+)/g;
+    for (const m of this.source.matchAll(tauRe)) {
+      if (!program.τBindings.has(m[1])) {
+        program.τBindings.set(m[1], { initialValue: this.evaluateText(m[2].trim()), temporal: true, updates: [], source: m[0], position: m.index });
+      }
+    }
+
     program.transformedCode = this.generateTransformedCode(program);
     
     return program;
@@ -83,7 +101,7 @@ export class KUHULParser {
       if (expression && ts.isCallExpression(expression)) {
         const callText = expression.getText();
         if (callText.includes('Sek(') || callText.includes('Pop(') || 
-            callText.includes('Wo(') || callText.includes('Ch\'en(')) {
+            callText.includes('Yax(') || callText.includes('Xul(')) {
           
           // Extract glyph name and arguments
           const match = callText.match(/(Sek|Pop|Wo|Ch'en|Yax|Xul)\(([^)]*)\)/);
@@ -162,6 +180,18 @@ export class KUHULParser {
     return undefined;
   }
   
+  private evaluateText(text: string): any {
+    const t = text.trim();
+    if ((t.startsWith('[') && t.endsWith(']')) || (t.startsWith('{') && t.endsWith('}'))) {
+      try { return JSON.parse(t.replace(/'/g, '"')); } catch { /* keep text */ }
+    }
+    if (!isNaN(parseFloat(text))) return parseFloat(text);
+    if ((text.startsWith("'") && text.endsWith("'")) || (text.startsWith('"') && text.endsWith('"'))) {
+      return text.slice(1, -1);
+    }
+    return text;
+  }
+
   private parseArgs(argsText: string): any[] {
     // Simple argument parsing
     const args: any[] = [];
@@ -393,4 +423,111 @@ export interface KUHULProgram {
   functions: Array<{name: string, parameters: string[], body: string, isGenerator: boolean, position?: number}>;
   directives: Array<{type: string, condition?: string, thenBranch?: string, elseBranch?: string, position?: number}>;
   transformedCode: string;
+}
+
+// ── KAST emitter: align the ECMAScript front end with the canonical IR ──────
+// Lowering rules:
+//   phase glyph != opcode   (fold = where, opcode = what, glyph = notation)
+//   application KAST != driver KAST  (@driver only for provider bindings)
+
+const GLYPH_OPCODE: Record<string, string> = {
+  Pop: 'PROBE',
+  Wo: 'BIND',
+  Yax: 'RESOLVE',
+  Sek: 'DISPATCH',
+  "Ch'en": 'COLLECT',
+  Xul: 'COMMIT',
+};
+
+function canonicalJson(obj: any): string {
+  if (Array.isArray(obj)) return '[' + obj.map(canonicalJson).join(', ') + ']';
+  if (obj !== null && typeof obj === 'object') {
+    return '{' + Object.keys(obj).sort().map(k => JSON.stringify(k) + ': ' + canonicalJson(obj[k])).join(', ') + '}';
+  }
+  return JSON.stringify(obj);
+}
+
+export function toKast(program: KUHULProgram, sourceId: string, opts: { driver?: boolean; driverOnly?: boolean; provider?: string; capabilities?: any; phaseHooks?: any; resources?: any } = {}): any {
+  const crypto = require('crypto');
+import { toDriverOnly } from './driver-kast';
+
+  // driver-only KAST: build the FULL application KAST (with @driver), then
+  // strip to the secure admission surface via toDriverOnly() — allowed
+  // glyphs/opcodes/folds derived from actual usage (least privilege).
+  const nodes: any[] = [], edges: any[] = [];
+  let nodeId = 0, edgeId = 0, entry: string | null = null;
+  const pushNode = (n: any) => { nodes.push(n); if (entry === null) entry = n.id; };
+
+  for (const [name, b] of program.πBindings) {
+    pushNode({ id: 'n' + nodeId++, kind: 'bind', fold: 'Pop', lane: 'config',
+      glyph: 'bind', opcode: 'BIND', symbol: name, type: 'constant',
+      operands: [name], attributes: { value: b.value, immutable: true } });
+  }
+  for (const [name, b] of program.τBindings) {
+    pushNode({ id: 'n' + nodeId++, kind: 'bind', fold: 'Wo', lane: 'state',
+      glyph: 'bind', opcode: 'BIND', symbol: name, type: 'temporal',
+      operands: [name], attributes: { value: b.initialValue, temporal: true } });
+  }
+  let prev: string | null = nodes.length ? nodes[nodes.length - 1].id : null;
+  for (const call of program.glyphCalls) {
+    const fold = call.glyph;
+    const opcode = GLYPH_OPCODE[fold] || 'CALL';
+    const symbol = (typeof call.args[0] === 'string' && !['true','false','null'].includes(call.args[0]))
+      ? call.args[0] : (call.source || call.glyph);
+    const nid = 'n' + nodeId++;
+    pushNode({ id: nid, kind: 'call', fold: fold, lane: 'compute',
+      glyph: call.glyph, opcode: opcode, symbol: symbol,
+      type: 'operator_call', operands: call.args, attributes: {} });
+    if (prev) edges.push({ id: 'e' + edgeId++, from: prev, to: nid,
+      kind: 'control', label: opcode, ordinal: edgeId - 1 });
+    prev = nid;
+  }
+  for (const fn of program.functions) {
+    const nid = 'n' + nodeId++;
+    pushNode({ id: nid, kind: 'glyph', fold: 'Sek', lane: 'driver',
+      glyph: fn.name, opcode: 'GLYPH', symbol: fn.name, type: 'driver_glyph',
+      operands: fn.parameters, attributes: { body: fn.body } });
+    if (prev) edges.push({ id: 'e' + edgeId++, from: prev, to: nid,
+      kind: 'control', label: 'call', ordinal: edgeId - 1 });
+    prev = nid;
+  }
+  for (const d of program.directives) {
+    const nid = 'n' + nodeId++;
+    pushNode({ id: nid, kind: d.type.slice(1), fold: 'Sek', lane: 'control',
+      glyph: d.type, opcode: d.type.slice(1).toUpperCase(), symbol: d.condition || '',
+      type: 'control_flow', operands: [], attributes: {} });
+    if (prev) edges.push({ id: 'e' + edgeId++, from: prev, to: nid,
+      kind: 'control', label: d.type, ordinal: edgeId - 1 });
+    prev = nid;
+  }
+
+  const semantic_hash = crypto.createHash('sha256')
+    .update(canonicalJson({ nodes, edges })).digest('hex');
+
+  const doc: any = {
+    protocol: 'kast/1',
+    registry_hash: crypto.createHash('sha256').update(sourceId || '').digest('hex'),
+    source_kind: 'kuhul-es',
+    source_id: sourceId || 'source.kuhules',
+    entry_node_id: entry,
+    nodes, edges, semantic_hash,
+  };
+  const wantsDriver = opts.driver || opts.driverOnly;
+  if (wantsDriver) {
+    const provider = opts.provider || program.πBindings.get('provider')?.value
+      || (sourceId ? String(sourceId).split('.')[0].toLowerCase() : 'kuhul-es');
+    const caps = program.πBindings.get('capabilities')?.value || ['tensor.map'];
+    doc['@driver'] = {
+      '@abi': 1,
+      '@requires': { kuhul: '>= 1.0', khl_abi: 1, scxq2: '>= 2.0' },
+      '@capabilities': Array.isArray(caps) ? caps : [caps],
+      '@phase_hooks': { Sek: 'dispatch', "Ch'en": 'collect_status', Xul: 'commit_tensor_state' },
+      '@provider': provider,
+      '@resources': [], '@hash': semantic_hash,
+    };
+  }
+  if (opts.driverOnly) {
+    return toDriverOnly(doc, { provider: opts.provider });
+  }
+  return doc;
 }
