@@ -1,1 +1,16 @@
 .deepseek/
+
+# 3D mesh and object files — generated on the fly
+*.obj
+*.3ds
+*.fbx
+*.dae
+*.blend
+*.blend1
+*.glb
+*.gltf
+*.stl
+*.ply
+*.3D
+*.mesh
+*.wrl
