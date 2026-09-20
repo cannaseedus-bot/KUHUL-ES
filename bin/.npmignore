@@ -1,0 +1,4 @@
+# Native compute binaries are bundled as bin.zip to keep the published package small.
+# Use `npm run extract-bin` to unpack them when you need the local GPU backends.
+*.exe
+*.dll

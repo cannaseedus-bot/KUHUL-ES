@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KUHUL UI Glass Morphism Components</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --glass-highlight: rgba(255, 255, 255, 0.3);
+            --accent-primary: #00d4ff;
+            --accent-secondary: #7c3aed;
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(255, 255, 255, 0.7);
+            --text-tertiary: rgba(255, 255, 255, 0.5);
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* ============================================
+           GLASS MORPHISM CONTAINER
+           ============================================ */
+
+        .glass-container {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease-out;
+        }
+
+        .glass-container:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-primary);
+            box-shadow: 0 8px 32px rgba(0, 212, 255, 0.15);
+        }
+
+        /* Highlight effect (glass shine) */
+        .glass-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                var(--glass-highlight),
+                transparent
+            );
+            border-radius: 16px 16px 0 0;
+        }
+
+        /* ============================================
+           BUTTONS
+           ============================================ */
+
+        .btn {
+            padding: 10px 20px;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            background: var(--glass-bg);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease-out;
+            backdrop-filter: blur(10px);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Primary button with gradient */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            border-color: transparent;
+            color: #000;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            box-shadow: 0 0 30px rgba(124, 58, 237, 0.5);
+            transform: translateY(-2px);
+        }
+
+        /* Icon button */
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        /* ============================================
+           INPUT FIELDS
+           ============================================ */
+
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 14px;
+            transition: all 0.3s ease-out;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-field::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .input-field:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+
+        .input-field:focus-visible {
+            outline: none;
+        }
+
+        /* ============================================
+           PANELS & FRAMES
+           ============================================ */
+
+        .panel {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .panel-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-icon {
+            font-size: 20px;
+            color: var(--accent-primary);
+        }
+
+        .panel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        /* ============================================
+           METERS & PROGRESS BARS
+           ============================================ */
+
+        .meter {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .meter-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .meter-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .meter-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            border-radius: 3px;
+            transition: width 0.3s ease-out;
+            position: relative;
+        }
+
+        /* Shimmer effect on meter */
+        .meter-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        /* ============================================
+           BADGES & LABELS
+           ============================================ */
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            backdrop-filter: blur(10px);
+        }
+
+        .badge-success {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+
+        .badge-warning {
+            border-color: rgba(234, 179, 8, 0.3);
+            background: rgba(234, 179, 8, 0.1);
+            color: #eab308;
+        }
+
+        .badge-error {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+
+        .badge-info {
+            border-color: rgba(59, 130, 246, 0.3);
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+
+        /* ============================================
+           CARDS
+           ============================================ */
+
+        .card {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease-out;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: var(--accent-primary);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 212, 255, 0.2);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-content {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           TABS
+           ============================================ */
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease-out;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            color: var(--accent-primary);
+            border-bottom-color: var(--accent-primary);
+        }
+
+        /* ============================================
+           TOAST NOTIFICATIONS
+           ============================================ */
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            font-size: 14px;
+            max-width: 400px;
+            animation: slideInUp 0.3s ease-out;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes slideInUp {
+            from {
+                transform: translateY(100px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        /* ============================================
+           GRID LAYOUT
+           ============================================ */
+
+        .grid {
+            display: grid;
+            gap: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        /* ============================================
+           FLEXBOX UTILITIES
+           ============================================ */
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .flex-between {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .gap-12 {
+            gap: 12px;
+        }
+
+        .gap-20 {
+            gap: 20px;
+        }
+
+        /* ============================================
+           ANIMATIONS
+           ============================================ */
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+
+        @media (max-width: 768px) {
+            .grid-2,
+            .grid-3 {
+                grid-template-columns: 1fr;
+            }
+
+            .panel {
+                padding: 16px;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .input-field {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+        }
+
+        /* ============================================
+           SCROLLBAR STYLING
+           ============================================ */
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-icon">🎨</div>
+            <div class="panel-title">KUHUL UI Glass Morphism Components</div>
+        </div>
+        <div class="panel-content">
+            <p style="color: var(--text-secondary); font-size: 13px; line-height: 1.6;">
+                Modern glass morphism component library for the KUHUL UI system.
+                All components use backdrop-filter for true glass effect.
+            </p>
+        </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-icon">🔘</div>
+            <div class="panel-title">Buttons</div>
+        </div>
+        <div class="flex gap-12">
+            <button class="btn">Secondary</button>
+            <button class="btn btn-primary">Primary Action</button>
+            <button class="btn btn-icon">⚙️</button>
+            <button class="btn btn-icon">✕</button>
+        </div>
+    </div>
+
+    <!-- Input Fields -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-icon">📝</div>
+            <div class="panel-title">Input Fields</div>
+        </div>
+        <div class="flex-col gap-12">
+            <input type="text" class="input-field" placeholder="Text input with glass morphism">
+            <input type="email" class="input-field" placeholder="Email input">
+            <input type="number" class="input-field" placeholder="Number input">
+        </div>
+    </div>
+
+    <!-- Meters & Progress -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-icon">📊</div>
+            <div class="panel-title">Meters & Progress</div>
+        </div>
+        <div class="flex-col gap-20">
+            <div class="meter">
+                <div class="meter-label">
+                    <span>GPU Utilization</span>
+                    <span>75%</span>
+                </div>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="width: 75%;"></div>
+                </div>
+            </div>
+            <div class="meter">
+                <div class="meter-label">
+                    <span>Memory Usage</span>
+                    <span>45%</span>
+                </div>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="width: 45%;"></div>
+                </div>
+            </div>
+            <div class="meter">
+                <div class="meter-label">
+                    <span>Training Progress</span>
+                    <span>92%</span>
+                </div>
+                <div class="meter-bar">
+                    <div class="meter-fill" style="width: 92%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Badges -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-icon">🏷️</div>
+            <div class="panel-title">Badges</div>
+        </div>
+        <div class="flex gap-12">
+            <div class="badge badge-success">✓ Active</div>
+            <div class="badge badge-warning">⚠ Warning</div>
+            <div class="badge badge-error">✕ Error</div>
+            <div class="badge badge-info">ℹ Info</div>
+        </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-icon">🎴</div>
+            <div class="panel-title">Cards</div>
+        </div>
+        <div class="grid-3">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Training</div>
+                    <span>▶️</span>
+                </div>
+                <div class="card-content">
+                    GPT2 Finetune Pipeline
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Verification</div>
+                    <span>✓</span>
+                </div>
+                <div class="card-content">
+                    CM-1 Gates Ready
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">Proofs</div>
+                    <span>🔒</span>
+                </div>
+                <div class="card-content">
+                    VT-1 Sealed
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-icon">📑</div>
+            <div class="panel-title">Tabs</div>
+        </div>
+        <div class="tabs">
+            <button class="tab active">Overview</button>
+            <button class="tab">Execution</button>
+            <button class="tab">Results</button>
+            <button class="tab">Settings</button>
+        </div>
+        <div style="color: var(--text-secondary); font-size: 13px;">Tab content goes here</div>
+    </div>
+
+    <!-- Grid Layouts -->
+    <div class="panel">
+        <div class="panel-header">
+            <div class="panel-icon">⊞</div>
+            <div class="panel-title">Grid Layouts</div>
+        </div>
+        <div class="grid">
+            <div class="glass-container">Item 1</div>
+            <div class="glass-container">Item 2</div>
+            <div class="glass-container">Item 3</div>
+            <div class="glass-container">Item 4</div>
+        </div>
+    </div>
+
+    <script>
+        // Component library ready for integration with kuhul-ui-canvas.js
+        console.log('Glass Morphism Components Loaded ✓');
+        
+        // Export component utilities
+        window.KuhulComponents = {
+            createButton(label, options = {}) {
+                const btn = document.createElement('button');
+                btn.className = `btn ${options.className || ''}`;
+                btn.textContent = label;
+                return btn;
+            },
+
+            createPanel(title, options = {}) {
+                const panel = document.createElement('div');
+                panel.className = 'panel';
+                panel.innerHTML = `
+                    <div class="panel-header">
+                        <div class="panel-icon">${options.icon || '📦'}</div>
+                        <div class="panel-title">${title}</div>
+                    </div>
+                    <div class="panel-content"></div>
+                `;
+                return panel;
+            },
+
+            createMeter(label, value) {
+                const meter = document.createElement('div');
+                meter.className = 'meter';
+                const percentage = (value * 100).toFixed(0);
+                meter.innerHTML = `
+                    <div class="meter-label">
+                        <span>${label}</span>
+                        <span>${percentage}%</span>
+                    </div>
+                    <div class="meter-bar">
+                        <div class="meter-fill" style="width: ${percentage}%;"></div>
+                    </div>
+                `;
+                return meter;
+            },
+
+            createCard(title, content, icon = '') {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-title">${title}</div>
+                        <span>${icon}</span>
+                    </div>
+                    <div class="card-content">${content}</div>
+                `;
+                return card;
+            },
+
+            showToast(message, duration = 3000) {
+                const toast = document.createElement('div');
+                toast.className = 'toast fade-in';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.animation = 'slideInUp 0.3s ease-out reverse';
+                    setTimeout(() => toast.remove(), 300);
+                }, duration);
+            }
+        };
+    </script>
+</body>
+</html>

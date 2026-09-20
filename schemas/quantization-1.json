@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "@kind": "quantization/1",
+  "title": "Quantization Config — GPTQ, AWQ, BNB, and SCXQDDS",
+  "description": "Describes the quantization configuration and per-layer quantized weight records for a model. The GPTQ qweight+scales+zeros+g_idx layout maps directly to SCXQDDS INT8 tensor records (see SCXQDDS spec). The dtype field maps to XSHARD shard dtype (Q4_K, Q8_0, INT8, F16, BF16, F32).",
+  "type": "object",
+  "properties": {
+    "quantization": {
+      "type": "object",
+      "required": ["method", "bits"],
+      "properties": {
+        "method": {
+          "type": "string",
+          "enum": ["GPTQ", "AWQ", "BNB", "SCXQDDS", "XSHARD_Q8", "XSHARD_Q4K"],
+          "description": "SCXQDDS is the native format for this project. GPTQ/AWQ map via tools/gguf_to_safetensors.py."
+        },
+        "bits":                { "type": "integer", "enum": [2, 3, 4, 8] },
+        "group_size":          { "type": "integer", "default": 128 },
+        "desc_act":            { "type": "boolean" },
+        "damp_percent":        { "type": "number" },
+        "calibration_dataset": { "type": "string" },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "quantized_layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["layer"],
+        "properties": {
+          "layer":        { "type": "string" },
+          "weight_shape": { "type": "array", "items": { "type": "integer" } },
+          "qweight": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+            "description": "Packed quantized weight bytes. In GPTQ 4-bit: each byte holds 2 weights. Maps to SCXQDDS tensor record data field."
+          },
+          "scales": {
+            "type": "array",
+            "items": { "type": "number" },
+            "description": "Per-group FP32 scale factors. SCXQDDS stores these in the scale_table field."
+          },
+          "zeros": {
+            "type": "array",
+            "items": { "type": "number" },
+            "description": "Per-group zero points. SCXQDDS quantize: w_dequant = (qw - zero) * scale."
+          },
+          "g_idx": {
+            "type": "array",
+            "items": { "type": "integer" },
+            "description": "Group index per column. Used with desc_act=true to reorder activations."
+          },
+          "dtype": {
+            "type": "string",
+            "enum": ["Q4_K", "Q8_0", "INT8", "F16", "BF16", "F32"],
+            "description": "Maps to XSHARD shard dtype and SCXQDDS record dtype field."
+          },
+          "fold": {
+            "type": "string",
+            "enum": ["Pop", "Wo", "Yax", "Sek", "Chen", "Xul"],
+            "description": "K'UHUL fold assignment for XSHARD sharding. q/k/v/o_proj → Sek (π). mlp → Wo/Yax. norm → Chen. embed → Pop. output → Xul."
+          },
+          "phase": { "type": "array", "items": { "type": "integer" } }
+        }
+      }
+    },
+    "bitsandbytes_config": {
+      "type": "object",
+      "properties": {
+        "load_in_4bit":              { "type": "boolean" },
+        "load_in_8bit":              { "type": "boolean" },
+        "bnb_4bit_compute_dtype":    { "type": "string" },
+        "bnb_4bit_quant_type":       { "type": "string", "enum": ["nf4", "fp4"] },
+        "bnb_4bit_use_double_quant": { "type": "boolean" },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "scxqdds_mapping": {
+      "type": "object",
+      "description": "Optional: explicit mapping from quantized_layers to SCXQDDS shard paths",
+      "properties": {
+        "shard_dir": { "type": "string" },
+        "layers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "layer":       { "type": "string" },
+              "shard_path":  { "type": "string" },
+              "shard_index": { "type": "integer" },
+              "seq":         { "type": "integer" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "quantization": {
+        "method": "GPTQ",
+        "bits": 4,
+        "group_size": 128,
+        "calibration_dataset": "c4",
+        "phase": [0x47, 0x50, 0x54, 0x51, 0x5F, 0x34, 0x42, 0x49, 0x54]
+      },
+      "quantized_layers": [
+        {
+          "layer":  "q_proj",
+          "weight_shape": [4096, 4096],
+          "qweight": [18, 52, 86, 120, 154, 188, 222, 240],
+          "scales":  [0.0234, 0.0456, 0.0678, 0.0891],
+          "zeros":   [1, 2, 3, 4],
+          "g_idx":   [0, 1, 2, 3, 0, 1, 2, 3],
+          "dtype":   "Q4_K",
+          "fold":    "Sek",
+          "phase": [0x51, 0x5F, 0x50, 0x52, 0x4F, 0x4A, 0x5F, 0x34, 0x42]
+        }
+      ]
+    }
+  ]
+}

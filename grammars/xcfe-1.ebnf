@@ -1,0 +1,82 @@
+(* ========================================================
+   XCFE/1 — eXecution Control Flow Enforcement Grammar
+   Control, flow, and variable vectors that shape execution.
+   ======================================================== *)
+
+XcfeDocument ::= VectorDeclaration*
+
+VectorDeclaration ::=
+    ControlVector
+  | FlowVector
+  | VariableVector
+
+(* ========================================================
+   CONTROL VECTORS
+   ======================================================== *)
+ControlVector ::= "@control" "." ControlName
+
+ControlName ::=
+      "nav"
+    | "layout"
+    | "state"
+    | "runtime"
+    | "learning"
+    | "memory"
+    | "security"
+    | "admission"
+    | "driver"
+
+ControlUse ::= "@control" "[" ControlName "]" "→" BlockRef
+
+(* ========================================================
+   FLOW VECTORS
+   ======================================================== *)
+FlowVector ::= "@flow" "." FlowName
+
+FlowName ::=
+      "scroll"
+    | "transition"
+    | "data"
+    | "runtime"
+    | "reinforcement"
+    | "telemetry"
+    | "compression"
+    | "admission"
+
+FlowUse ::= "@flow" "[" FlowName "]" "→" BlockRef
+
+(* ========================================================
+   VARIABLE VECTORS
+   ======================================================== *)
+VariableVector ::= "@variable" "." VariableName
+
+VariableName ::=
+      "state"
+    | "metrics"
+    | "entropy"
+    | "innovation"
+    | "curvature"
+    | "law"
+    | "field"
+
+VariableUse ::= "@variable" "[" VariableName "]" "=" Expression
+
+(* ========================================================
+   DRIVER CONTRACTS
+   ======================================================== *)
+DriverContract ::= "@driver" Identifier "{" DriverCapability* "}"
+
+DriverCapability ::=
+      "@control" ":" ControlVector
+    | "@flow" ":" FlowVector
+    | "@variable" ":" VariableVector
+    | "@admit" ":" BlockRef
+
+BlockRef ::= StringLiteral | Identifier
+
+Expression ::= Literal | Identifier
+Literal ::= StringLiteral | NumericLiteral | BooleanLiteral
+
+(* XCFE invariant: control vectors choose, flow vectors sequence,
+   variable vectors store. Only K'UHUL can enforce, only Micronaut
+   can control. *)

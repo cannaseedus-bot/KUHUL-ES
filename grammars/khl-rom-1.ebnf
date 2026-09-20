@@ -1,0 +1,93 @@
+(* ========================================================
+   KHL/1 — Kernel Hyper Language ROM Grammar
+   Block-based executable manifest used in sw.khl ROMs.
+   ======================================================== *)
+
+KhlDocument ::= Comment* Header Block* Trailer
+
+Header ::= "⟁" Identifier "⟁"
+
+Trailer ::= "⟁" "FINAL_LOCK" "⟁" Comment*
+
+Block ::= BlockHeader BlockBody BlockFooter
+
+BlockHeader ::= "[" GlyphName (Identifier | StringLiteral)? "]"
+
+BlockBody ::=
+      (BlockLine "→"?)*
+    | AtomicVectorBlock
+
+AtomicVectorBlock ::=
+    "⟁" Identifier "⟁"
+    (VectorDeclaration | VariableDeclaration)*
+    "⟁ Xul ⟁"
+
+BlockFooter ::= "[Xul]"
+
+BlockLine ::=
+      GlyphChain
+    | ControlBlock
+    | AssignmentLine
+    | Comment
+
+GlyphChain ::= GlyphStep ("→" GlyphStep)*
+
+GlyphStep ::=
+      "[" GlyphName (Expression | Identifier)? "]"
+    | "[Wo" Expression "]"→"[Ch'en" Identifier "]"
+    | "[Yax" Expression "]"→"[Sek" Expression "]"
+
+ControlBlock ::=
+      LoopBlock
+    | IfBlock
+    | DispatchBlock
+    | MicroagentBlock
+
+LoopBlock ::= "[@loop" Expression "]"→"[" BlockBody "]"
+
+IfBlock ::= "[@if" Expression "]"→"[@then" BlockBody "]"→"[@else" BlockBody "]"
+
+DispatchBlock ::= "[@dispatch" Expression "]"→"[" CaseClause+ "]"
+
+CaseClause ::= "→" "[@case" (StringLiteral | Identifier) "]"→"[" BlockBody "]"
+
+MicroagentBlock ::=
+    "[@microagent]"
+    "→" "[@agent.spawn" Identifier "]"
+    "→" "[@agent.assign_task" ObjectLiteral "]"
+    "→" "[@agent.execute]"
+    "→" "[@agent.merge_results]"
+    "→" "[" BlockBody "]"
+
+AssignmentLine ::=
+    "[Wo" Expression "]"→"[Yax" Identifier (Identifier)? "]"→"[Sek" Identifier "]"
+
+VectorDeclaration ::=
+    Identifier "=" "[" Identifier ("," Identifier)* "]"
+
+VariableDeclaration ::=
+    Identifier ":" Literal
+  | Identifier "=" Literal
+
+GlyphName ::=
+      "Pop" | "Wo" | "Yax" | "Sek" | "Ch'en" | "Xul" | "Noj"
+
+Expression ::=
+      Literal
+    | Identifier
+    | MemberAccess
+    | ObjectLiteral
+    | ArrayLiteral
+    | FunctionCall
+
+MemberAccess ::= Identifier ("[" Expression "]" | "." Identifier)*
+
+FunctionCall ::= Identifier "(" ArgumentList ")"
+ArgumentList ::= (Expression ("," Expression)*)?
+
+Literal ::= StringLiteral | NumericLiteral | BooleanLiteral
+ObjectLiteral ::= "{" Property* "}"
+ArrayLiteral ::= "[" Literal ("," Literal)* "]"
+Property ::= StringLiteral ":" Literal
+
+Comment ::= "/*" .* "*/"

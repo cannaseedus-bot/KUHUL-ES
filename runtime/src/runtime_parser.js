@@ -80,9 +80,7 @@ class RuntimeParser {
         const expr = node.expression;
         if (ts.isBinaryExpression(expr)) {
           const op = expr.operatorToken.getText();
-          if (ts.isIdentifier(expr.left) && /^(τ|tau)\s+/.test(expr.left.getText())) {
-            // not a valid update target
-          } else if (ts.isIdentifier(expr.left)) {
+          if (ts.isIdentifier(expr.left)) {
             const name = expr.left.text;
             const rhs = evaluator.eval(expr.right.getText());
             updates.push({ name, op, value: rhs, position: node.getStart() });

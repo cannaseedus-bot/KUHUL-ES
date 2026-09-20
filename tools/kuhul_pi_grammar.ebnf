@@ -1,0 +1,247 @@
+(* ========================================================
+   KUHUL π CANONICAL GRAMMAR v1.1
+   Frozen · Minimum Viable Law · Enforcement-Only
+   ======================================================== *)
+
+(* ========================================================
+   0. VERSION & STATUS
+   ======================================================== *)
+GrammarVersion ::= "KUHUL_PI_GRAMMAR" "v1.1"
+GrammarStatus  ::= "CANONICAL" | "FROZEN"
+
+(* Status: CANONICAL
+   Mutation: FORBIDDEN
+   Authority: KUHUL π ONLY *)
+
+(* ========================================================
+   1. ARCHITECTURAL BOUNDARY (LOCKED)
+   ======================================================== *)
+Architecture ::= MicronautDomain "→" KuhulDomain
+               | MicronautDomain "→" ExtrapolationSystem
+
+MicronautDomain ::= OrchestrationLayer
+KuhulDomain     ::= EnforcementLayer
+ExtrapolationSystem ::= NarrativeExpansion
+
+(* ========================================================
+   2. DOMAIN DEFINITIONS (ORTHOGONAL)
+   ======================================================== *)
+OrchestrationLayer ::= "MICRONAUT" "{" ContextOrchestration "}"
+EnforcementLayer   ::= "KUHUL_π"   "{" LawEnforcement "}"
+NarrativeExpansion ::= "EXTRAPOLATOR" "{" ExtrapolationLaw "}"
+
+(* ========================================================
+   3. MICRONAUT (ORCHESTRATION ONLY)
+   ======================================================== *)
+ContextOrchestration ::=
+      "SELECT"  FieldPresentation
+    | "ARRANGE" CollapseTiming
+    | "CHOOSE"  FieldSelection
+    | "MANAGE"  HostReality
+
+(* Invariant: Micronaut cannot define, enforce, collapse, or reject. *)
+
+(* ========================================================
+   4. KUHUL π (ENFORCEMENT ONLY)
+   ======================================================== *)
+LawEnforcement ::=
+      "DEFINE"   ExecutionDefinition
+    | "ENFORCE"  Invariant
+    | "REJECT"   IllegalState
+    | "COLLAPSE" ToLaw
+
+(* Invariant: KUHUL π cannot orchestrate, schedule, branch, or negotiate. *)
+
+(* ========================================================
+   5. EXTRAPOLATOR (RAMBLE ENGINE)
+   ======================================================== *)
+ExtrapolationLaw ::=
+      "EXPAND" ProjectionSpace
+    | "ASSERT" ExtrapolationInvariant
+
+ProjectionSpace ::=
+      "metaphor"
+    | "analogy"
+    | "framing"
+    | "discipline"
+    | "perspective"
+    | "caveat"
+    | "philosophy"
+
+ExtrapolationInvariant ::=
+      "'read_only_collapse_result'"
+    | "'non_authoritative_output'"
+    | "'no_contradiction'"
+    | "'infinite_extrapolation_allowed'"
+    | "'finite_execution_enforced'"
+
+(* Key Law: Extrapolation never alters collapse. *)
+
+(* ========================================================
+   6. KUHUL π PROGRAM STRUCTURE
+   ======================================================== *)
+KuhulProgram ::= πBlock+
+
+πBlock ::= "⟁π⟁" πContent "⟁Xul⟁"
+πContent ::= (Declaration | Perception | Collapse | Output | ProofConstruct)*
+
+(* ========================================================
+   7. DECLARATIONS (INVARIANTS ONLY)
+   ======================================================== *)
+Declaration ::=
+      EntropyDeclaration
+    | InvariantDeclaration
+    | CarrierDeclaration
+    | FieldDeclaration
+
+EntropyDeclaration ::= "⟁Wo⟁" "entropy" "=" "0.21"
+
+InvariantDeclaration ::= "⟁Wo⟁" "invariant" "=" InvariantName
+
+InvariantName ::=
+      "'collapse_only'"
+    | "'field_perception'"
+    | "'compression_law'"
+    | "'unreachable_states'"
+
+(* ========================================================
+   8. CARRIERS (SEMANTIC WHITESPACE)
+   ======================================================== *)
+CarrierDeclaration ::= "⟁Wo⟁" "carriers" "=" "[" CarrierList "]"
+CarrierList ::= Carrier ("," Carrier)*
+
+Carrier ::= "' '" | "'\n'" | "'\t'"
+
+(* ========================================================
+   9. FIELD DEFINITIONS
+   ======================================================== *)
+FieldDeclaration ::= "⟁Wo⟁" "field." FieldName FieldDefinition
+
+FieldName ::= "space" | "newline" | "tab"
+
+FieldDefinition ::= "{" FieldProperties "}"
+
+FieldProperties ::=
+      "type:" FieldType ","
+      "curvature:" "executable"
+      ("," FieldProperty)*
+
+FieldType ::= "'vacuum'" | "'boundary'" | "'structure'"
+
+FieldProperty ::=
+      "hosts:" HostType
+    | "constraint:" ConstraintName
+
+HostType ::= "micronaut*" | "collapse_points" | "phase_transitions"
+
+ConstraintName ::= "'no_injection'" | "'read_only'" | "'geometry_only'"
+
+(* ========================================================
+   10. PERCEPTION (NO PARSING)
+   ======================================================== *)
+Perception ::= "⟁Sek⟁" "perceive" PerceptionTarget
+
+PerceptionTarget ::= "input" | FieldReference | "current_field"
+
+FieldReference ::= "field" | "current_field" | "field." FieldName
+
+(* ========================================================
+   11. COLLAPSE (ONLY OPERATION)
+   ======================================================== *)
+Collapse ::= "⟁Sek⟁" CollapseOperation CollapseTarget
+
+CollapseOperation ::=
+      "collapse_to_law"
+    | "collapse_with_max_weight"
+    | "enforce_collapse_only"
+
+CollapseTarget ::= "signal" | "curvature" | "field" | "current_state"
+
+(* ========================================================
+   12. OUTPUT (PROJECTION ONLY)
+   ======================================================== *)
+Output ::= "⟁Sek⟁" OutputOperation OutputTarget
+
+OutputOperation ::= "produce_output" | "project_to" | "render_as"
+
+OutputTarget ::= "'css'" | "'dom'" | "'svg'" | "'canvas'" | "'terminal'"
+
+(* ========================================================
+   13. MICRONAUT EMERGENCE (NOT INJECTION)
+   ======================================================== *)
+MicronautEmergence ::=
+      "emerge_micronaut" "(" FieldCurvature ")"
+    | "extract_minimal_irregularity" "(" FieldCurvature ")"
+
+FieldCurvature ::= "field_curvature"
+
+(* ========================================================
+   14. COMPRESSION AS LAW
+   ======================================================== *)
+CompressionLaw ::=
+      Expression "↻" "'scxq2'"
+    | "compress_as_law" "(" Expression ")"
+
+Expression ::= "expression"
+
+(* Rule: If compression fails → state was never executable. *)
+
+(* ========================================================
+   15. ILLEGAL STATES (UNREACHABLE)
+   ======================================================== *)
+IllegalStatePrevention ::=
+      "unreachable_state" "(" ")"
+    | "violation" "(" InvariantName ")"
+
+(* ========================================================
+   16. EXECUTION PIPELINE (SINGULAR)
+   ======================================================== *)
+ExecutionPipeline ::=
+    "perceive_as_field" "(" "curvature_only" ")" "→"
+    "extract_executable_curvature" "→"
+    "collapse_to_law" "→"
+    "output"
+
+(* ========================================================
+   17. PROOF CONSTRUCTS (NON-OPTIONAL)
+   ======================================================== *)
+ProofDeclaration ::= "⟁Wo⟁" "proof." ProofName ProofDefinition
+
+ProofName ::= "collapse_only" | "one_outcome" | "separation"
+
+ProofDefinition ::= "{" ProofContent "}"
+
+ProofConstruct ::= ProofDeclaration
+ProofContent ::= "proof_content"
+
+(* ========================================================
+   18. CONTROL FLOW (ABSENT BY LAW)
+   ======================================================== *)
+(* NO IF
+   NO LOOPS
+   NO BRANCHING
+   NO PARALLELISM
+   NO MUTATION *)
+
+(* ========================================================
+   19. COMMENTS (NON-SEMANTIC)
+   ======================================================== *)
+Comment ::= "(*" .* "*)" | "#" .*
+
+(* ========================================================
+   20. FINAL CANONICAL STATEMENTS
+   ======================================================== *)
+CanonicalStatement ::=
+    "Micronaut orchestrates contexts."
+    "KUHUL π enforces law."
+    "Extrapolator expands without altering outcomes."
+    "They are orthogonal."
+    "The boundary is permanent."
+    "No further refinement possible."
+
+(* ========================================================
+   FINAL LOCK
+   ======================================================== *)
+(* This grammar is deterministic, replay-identical, non-extensible,
+   enforcement-only, Micronaut-safe, and Ramble-compatible.
+   Nothing is missing. Extensions contradict the proof. *)

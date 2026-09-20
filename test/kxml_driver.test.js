@@ -60,11 +60,17 @@ describe('KxmlModel', () => {
     assert.equal(out.shape[1], 2);
 
     const kast = model.toKast();
-    assert.equal(kast.nodes.length, 3);
-    assert.ok(kast.nodes.some(n => n.glyph === 'G_EMBED' && n.fold === 'Pop'));
-    assert.ok(kast.nodes.some(n => n.glyph === 'G_MATMUL' && n.fold === 'Sek'));
-    assert.ok(kast.nodes.some(n => n.glyph === 'G_GELU' && n.fold === 'Sek'));
-    assert.equal(kast.edges.length, 2);
+    assert.equal(kast.protocol, 'kfold/1');
+    assert.equal(kast.entry_fold, 'fold-0-Pop');
+    assert.equal(kast.folds.length, 3);
+    assert.equal(kast.folds[0].phase, 'Pop');
+    assert.ok(kast.folds[0].nodes.some(n => n.glyph === 'G_EMBED'));
+    assert.equal(kast.folds[1].phase, 'Sek');
+    assert.ok(kast.folds[1].nodes.some(n => n.glyph === 'G_MATMUL'));
+    assert.equal(kast.folds[2].phase, 'Sek');
+    assert.ok(kast.folds[2].nodes.some(n => n.glyph === 'G_GELU'));
+    assert.equal(kast.folds[0].unfolds.length, 1);
+    assert.equal(kast.folds[0].unfolds[0].target, kast.folds[1].id);
   });
 
   it('matmul and gelu produce finite numbers', () => {

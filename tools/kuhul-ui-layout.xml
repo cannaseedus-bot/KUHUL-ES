@@ -1,0 +1,438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  KUHUL UI Layout System
+  XML-driven frame definitions for glass morphism UI
+  
+  Purpose: Define layout structure, component composition, and data binding
+  Schema: Validates against idb.schema.xsd
+  Rendering: Loaded by kuhul-ui-orchestrator.js
+-->
+<kuhul-layout version="2.0" xmlns="urn:kuhul:ui:layout:2.0">
+  
+  <!-- ================================================================
+       LAYOUT METADATA
+       ================================================================ -->
+  <metadata>
+    <name>KUHUL Training Dashboard</name>
+    <version>2.0.0</version>
+    <author>Supernaut UI System</author>
+    <description>Real-time visualization for GPU training pipeline</description>
+    <created>2026-04-05</created>
+  </metadata>
+
+  <!-- ================================================================
+       THEME CONFIGURATION
+       ================================================================ -->
+  <theme>
+    <colors>
+      <color name="glass-bg">rgba(255, 255, 255, 0.08)</color>
+      <color name="glass-border">rgba(255, 255, 255, 0.2)</color>
+      <color name="accent-primary">#00d4ff</color>
+      <color name="accent-secondary">#7c3aed</color>
+      <color name="text-primary">rgba(255, 255, 255, 0.95)</color>
+      <color name="text-secondary">rgba(255, 255, 255, 0.7)</color>
+      <color name="success">#22c55e</color>
+      <color name="warning">#eab308</color>
+      <color name="error">#ef4444</color>
+    </colors>
+    
+    <typography>
+      <font-family>Segoe UI, system-ui, -apple-system, sans-serif</font-family>
+      <font-sizes>
+        <size name="display">28px</size>
+        <size name="heading">20px</size>
+        <size name="title">16px</size>
+        <size name="body">14px</size>
+        <size name="small">12px</size>
+        <size name="tiny">11px</size>
+      </font-sizes>
+    </typography>
+
+    <spacing>
+      <value name="xs">4px</value>
+      <value name="sm">8px</value>
+      <value name="md">12px</value>
+      <value name="lg">16px</value>
+      <value name="xl">20px</value>
+      <value name="2xl">32px</value>
+    </spacing>
+
+    <effects>
+      <blur>10px</blur>
+      <border-radius>12px</border-radius>
+      <shadow>0 8px 32px rgba(0, 0, 0, 0.1)</shadow>
+      <transition>all 0.3s ease-out</transition>
+    </effects>
+  </theme>
+
+  <!-- ================================================================
+       FRAME DEFINITIONS
+       ================================================================ -->
+  <frames>
+
+    <!-- ===== MAIN DASHBOARD ===== -->
+    <frame id="dashboard-main" type="container" layout="grid">
+      <metadata>
+        <title>Training Dashboard</title>
+        <description>Main orchestration view</description>
+      </metadata>
+
+      <layout>
+        <grid-template columns="2fr 1fr" rows="auto auto" gap="md">
+          <area name="header" row="1" col="1-3"></area>
+          <area name="orchestrator" row="2" col="1"></area>
+          <area name="status" row="2" col="2"></area>
+        </grid-template>
+      </layout>
+
+      <!-- Header Frame -->
+      <frame id="header-frame" name="header" type="panel">
+        <style class="glass-container">
+          <property name="background">var(--glass-bg)</property>
+          <property name="border">1px solid var(--glass-border)</property>
+          <property name="padding">lg</property>
+          <property name="border-radius">border-radius</property>
+        </style>
+
+        <component type="title">
+          <text>🚀 KUHUL Training Pipeline v2.0</text>
+          <attribute name="size">display</attribute>
+        </component>
+
+        <component type="subtitle">
+          <text>Deterministic K'UHUL Orchestration with GPU Acceleration</text>
+          <attribute name="color">text-secondary</attribute>
+          <attribute name="size">body</attribute>
+        </component>
+
+        <component type="badge-group">
+          <badge status="success">✓ Bridge Running</badge>
+          <badge status="success">✓ Manifest Loaded</badge>
+          <badge status="info">ℹ GPU Ready</badge>
+        </component>
+      </frame>
+
+      <!-- Orchestrator Frame -->
+      <frame id="orchestrator-frame" name="orchestrator" type="panel">
+        <style class="glass-container">
+          <property name="background">var(--glass-bg)</property>
+          <property name="padding">lg</property>
+          <property name="flex">flex-col</property>
+          <property name="gap">md</property>
+        </style>
+
+        <component type="title">
+          <text>🔄 Orchestration</text>
+        </component>
+
+        <!-- Phase Visualization -->
+        <component type="phase-pipeline">
+          <phase id="phase-1" name="ORCHESTRATE" status="running">
+            <progress value="75"></progress>
+            <description>KX-1 setup + data loading</description>
+          </phase>
+
+          <phase id="phase-2" name="SAVE_AND_VERIFY" status="pending">
+            <progress value="0"></progress>
+            <description>MM-1 I/O + GP-1 training</description>
+          </phase>
+
+          <phase id="phase-3" name="VERIFY_DETERMINISM" status="pending">
+            <progress value="0"></progress>
+            <description>CM-1 gates validation</description>
+          </phase>
+
+          <phase id="phase-4" name="EMIT_PROOF" status="pending">
+            <progress value="0"></progress>
+            <description>VT-1 proof sealing</description>
+          </phase>
+        </component>
+
+        <!-- Micronauts Status -->
+        <component type="micronauts-grid">
+          <micronaut id="kx1" name="KX-1" role="KuhulExecutor" port="3175" status="ready">
+            <icon>⚙️</icon>
+            <description>Orchestration</description>
+          </micronaut>
+
+          <micronaut id="mm1" name="MM-1" role="ModelManager" port="3167" status="ready">
+            <icon>📦</icon>
+            <description>Model I/O</description>
+          </micronaut>
+
+          <micronaut id="gp1" name="GP-1" role="GpuDispatch" port="3182" status="ready">
+            <icon>🔲</icon>
+            <description>GPU Compute</description>
+          </micronaut>
+
+          <micronaut id="vt1" name="VT-1" role="VaultKeeper" port="3183" status="ready">
+            <icon>🔒</icon>
+            <description>Proof Sealing</description>
+          </micronaut>
+        </component>
+      </frame>
+
+      <!-- Status Frame -->
+      <frame id="status-frame" name="status" type="panel">
+        <style class="glass-container">
+          <property name="background">var(--glass-bg)</property>
+          <property name="padding">lg</property>
+          <property name="flex">flex-col</property>
+          <property name="gap">md</property>
+        </style>
+
+        <component type="title">
+          <text>📊 Status</text>
+        </component>
+
+        <!-- Metrics -->
+        <component type="metric-group">
+          <metric name="GPU Utilization">
+            <value>75</value>
+            <unit>%</unit>
+            <bar value="75"></bar>
+          </metric>
+
+          <metric name="Memory Usage">
+            <value>45</value>
+            <unit>%</unit>
+            <bar value="45"></bar>
+          </metric>
+
+          <metric name="Training Progress">
+            <value>92</value>
+            <unit>%</unit>
+            <bar value="92"></bar>
+          </metric>
+
+          <metric name="Epoch">
+            <value>3</value>
+            <unit>/5</unit>
+          </metric>
+        </component>
+
+        <!-- System Health -->
+        <component type="health-status">
+          <check name="Bridge">
+            <status>✓ Online</status>
+            <uptime>02:34:21</uptime>
+          </check>
+
+          <check name="Micronauts">
+            <status>✓ All Running</status>
+            <count>4/4</count>
+          </check>
+
+          <check name="Training">
+            <status>▶ Running</status>
+            <duration>1h 23m 45s</duration>
+          </check>
+        </component>
+      </frame>
+
+    </frame>
+
+    <!-- ===== TRAINING DETAILS ===== -->
+    <frame id="training-details" type="container" layout="flex">
+      <metadata>
+        <title>Training Details</title>
+        <description>Detailed training configuration and results</description>
+      </metadata>
+
+      <frame id="config-panel" type="panel">
+        <style class="glass-container">
+          <property name="background">var(--glass-bg)</property>
+          <property name="width">100%</property>
+        </style>
+
+        <component type="title">
+          <text>⚙️ Configuration</text>
+        </component>
+
+        <component type="config-table">
+          <row>
+            <key>Model</key>
+            <value>cli_coder_gpt2</value>
+          </row>
+          <row>
+            <key>Epochs</key>
+            <value>5</value>
+          </row>
+          <row>
+            <key>Samples</key>
+            <value>50000</value>
+          </row>
+          <row>
+            <key>Batch Size</key>
+            <value>4</value>
+          </row>
+          <row>
+            <key>Learning Rate</key>
+            <value>0.00003</value>
+          </row>
+          <row>
+            <key>Device</key>
+            <value>GPU (OpenCL)</value>
+          </row>
+        </component>
+      </frame>
+    </frame>
+
+    <!-- ===== VERIFICATION RESULTS ===== -->
+    <frame id="verification-results" type="container">
+      <metadata>
+        <title>Verification & Proofs</title>
+        <description>CM-1 gates and proof status</description>
+      </metadata>
+
+      <frame id="gates-panel" type="panel">
+        <style class="glass-container">
+          <property name="background">var(--glass-bg)</property>
+          <property name="width">100%</property>
+        </style>
+
+        <component type="title">
+          <text>✓ CM-1 Verification Gates</text>
+        </component>
+
+        <component type="gate-list">
+          <gate id="gate-1" name="Program Identity">
+            <status>passed</status>
+            <description>Program signature verified</description>
+            <timestamp>2026-04-05 09:45:12</timestamp>
+          </gate>
+
+          <gate id="gate-2" name="Trace Determinism">
+            <status>passed</status>
+            <description>Execution trace is deterministic</description>
+            <timestamp>2026-04-05 09:48:34</timestamp>
+          </gate>
+
+          <gate id="gate-3" name="Output Reproducibility">
+            <status>running</status>
+            <description>Verifying output reproducibility</description>
+            <progress>65</progress>
+          </gate>
+
+          <gate id="gate-4" name="Sandbox Integrity">
+            <status>pending</status>
+            <description>Waiting for training completion</description>
+          </gate>
+
+          <gate id="gate-5" name="Constraint Satisfaction">
+            <status>pending</status>
+            <description>Waiting for training completion</description>
+          </gate>
+        </component>
+      </frame>
+
+      <frame id="proof-panel" type="panel">
+        <style class="glass-container">
+          <property name="background">var(--glass-bg)</property>
+          <property name="width">100%</property>
+        </style>
+
+        <component type="title">
+          <text>🔒 Sealed Proofs</text>
+        </component>
+
+        <component type="proof-display">
+          <proof id="proof-1">
+            <uri>sco://sandbox/GPT2-Training-Result-abc123</uri>
+            <sealed-by>VT-1 (VaultKeeper)</sealed-by>
+            <timestamp>2026-04-05 10:12:45</timestamp>
+            <status>sealed</status>
+          </proof>
+        </component>
+      </frame>
+    </frame>
+
+  </frames>
+
+  <!-- ================================================================
+       BINDINGS & DATA FLOW
+       ================================================================ -->
+  <bindings>
+    <!-- Real-time metric updates -->
+    <binding source="gpu-utilization" target="status-frame/gpu-metric">
+      <filter type="lerp">0.1</filter>
+      <update-rate>1000ms</update-rate>
+    </binding>
+
+    <!-- Phase progress updates -->
+    <binding source="training-phase" target="orchestrator-frame/phase-pipeline">
+      <event>phase-changed</event>
+      <animation>slide-in</animation>
+    </binding>
+
+    <!-- Micronaut status updates -->
+    <binding source="micronaut-health" target="orchestrator-frame/micronauts-grid">
+      <update-rate>5000ms</update-rate>
+      <fallback>timeout</fallback>
+    </binding>
+
+    <!-- Verification gate updates -->
+    <binding source="cm1-gates" target="verification-results/gates-panel">
+      <event>gate-completed</event>
+      <animation>fade-in</animation>
+    </binding>
+
+    <!-- Proof sealing -->
+    <binding source="vt1-proof" target="verification-results/proof-panel">
+      <event>proof-sealed</event>
+      <animation>slide-in</animation>
+    </binding>
+  </bindings>
+
+  <!-- ================================================================
+       INTERACTIONS & EVENTS
+       ================================================================ -->
+  <interactions>
+    <!-- Submit training request -->
+    <interaction id="submit-training" type="button">
+      <target>training-details</target>
+      <action>submit-training-request</action>
+      <payload>
+        <model>cli_coder_gpt2</model>
+        <epochs>5</epochs>
+        <samples>50000</samples>
+        <batch>4</batch>
+        <lr>0.00003</lr>
+      </payload>
+      <feedback>
+        <loading>Submitting to Supernaut...</loading>
+        <success>✓ Training submitted! Request ID: {request_id}</success>
+        <error>✗ Failed to submit training</error>
+      </feedback>
+    </interaction>
+
+    <!-- Cancel training -->
+    <interaction id="cancel-training" type="button">
+      <target>orchestrator-frame</target>
+      <action>cancel-training</action>
+      <confirmation>Are you sure? This will stop the current training.</confirmation>
+      <feedback>
+        <loading>Cancelling training...</loading>
+        <success>✓ Training cancelled</success>
+        <error>✗ Failed to cancel</error>
+      </feedback>
+    </interaction>
+
+    <!-- View training details -->
+    <interaction id="view-logs" type="button">
+      <target>training-details</target>
+      <action>toggle-logs</action>
+      <panel>training-logs</panel>
+    </interaction>
+  </interactions>
+
+  <!-- ================================================================
+       EXPORT & SCHEMA VALIDATION
+       ================================================================ -->
+  <validation>
+    <schema>idb.schema.xsd</schema>
+    <strict>true</strict>
+    <fallback-behavior>use-defaults</fallback-behavior>
+  </validation>
+
+</kuhul-layout>

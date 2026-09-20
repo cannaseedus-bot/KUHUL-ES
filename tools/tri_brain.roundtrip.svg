@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<brain-graph coord-frame="triangle" version="1.0">
+  <brain-node id="R1" role="sensory" rank="0" shape="128x64" q_scheme="int4" device="gpu" x="0.15" y="0.8" />
+  <brain-node id="R2" role="associative" rank="1" shape="256x64" q_scheme="int4" device="gpu" x="0.55" y="0.35" />
+  <geodesic-entropy-arc id="arc_R1_R2" from="R1" to="R2" metric="2.7" entropy="0.83" capacity="1" phase="1.047" control="feedforward" symmetry="uni" path="M0.15,0.80 Q0.35,0.70 0.55,0.35" />
+</brain-graph>

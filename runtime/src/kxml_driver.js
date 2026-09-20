@@ -138,16 +138,28 @@ const GLYPH_TO_FOLD = {
 };
 
 function nodeFromStep(step, cfg) {
+  const fold = GLYPH_TO_FOLD[step.glyph] || 'Sek';
+  const operands = [];
+  const reads = step.reads || {};
+  for (const [name, ref] of Object.entries(reads)) {
+    if (typeof ref === 'object' && ref !== null) {
+      operands.push({ name, id: ref.id !== undefined ? ref.id : null, tensor: ref.name || null });
+    } else {
+      operands.push({ name, value: ref });
+    }
+  }
+  if (step.bias) operands.push({ name: 'bias', tensor: step.bias });
   return {
     id: step.step,
     kind: 'node',
-    fold: GLYPH_TO_FOLD[step.glyph] || 'Sek',
+    fold,
     lane: 'compute',
     glyph: step.glyph,
     opcode: step.glyph.replace('G_', ''),
     symbol: step.step,
     gravity: step.glyph === 'G_LAYERNORM' || step.glyph === 'G_MATMUL' ? 'Heavy' : 'Normal',
     params: step.params || {},
+    operands,
   };
 }
 
@@ -247,17 +259,48 @@ class KxmlModel {
   }
 
   toKast() {
+    const folds = [];
+    let prevId = null;
+    let prevName = null;
+    for (let i = 0; i < this.trace.length; i++) {
+      const traceNode = this.trace[i];
+      const phase = traceNode.fold;
+      const id = `fold-${i}-${phase}`;
+      const fold = {
+        id,
+        phase,
+        axis: 'vertical',
+        state: 'committed',
+        parent: prevId,
+        depth: i,
+        nodes: [{
+          id: traceNode.id,
+          index: 0,
+          axis: 'linear',
+          lane: traceNode.lane,
+          glyph: traceNode.glyph,
+          opcode: traceNode.opcode,
+          symbol: traceNode.symbol,
+          operands: traceNode.operands || [],
+          attributes: { gravity: traceNode.gravity, params: traceNode.params },
+        }],
+        unfolds: [],
+        attributes: {},
+      };
+      if (prevId) {
+        folds[folds.length - 1].unfolds.push({ target: id, gate: 'always', ordinal: 0 });
+      }
+      folds.push(fold);
+      prevId = id;
+      prevName = phase;
+    }
     return {
-      protocol: 'kast/1',
+      protocol: 'kfold/1',
+      entry_fold: folds.length > 0 ? folds[0].id : null,
+      folds,
+      semantic_hash: null,
       source_kind: 'kxml-model',
       config: this.cfg,
-      nodes: this.trace,
-      edges: this.trace.slice(1).map((n, i) => ({
-        from: this.trace[i].id,
-        to: n.id,
-        kind: 'control',
-        label: `${this.trace[i].fold}->${n.fold}`,
-      })),
     };
   }
 }

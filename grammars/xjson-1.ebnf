@@ -1,0 +1,69 @@
+(* ========================================================
+   XJSON/1 — Extensible JSON Grammar
+   JSON with semantic metadata and atomic-block annotations.
+   ======================================================== *)
+
+XjsonDocument ::= Object
+
+Object ::= "{" PairList "}"
+
+PairList ::= (Pair ("," Pair)*)?
+
+Pair ::=
+      SemanticPair
+    | DataPair
+
+SemanticPair ::=
+    '"@' SemanticKey '"' ":" Value
+
+SemanticKey ::=
+      "context"
+    | "v"
+    | "law"
+    | "entity"
+    | "control"
+    | "flow"
+    | "view"
+    | "variable"
+    | "id"
+    | "type"
+
+DataPair ::=
+    StringLiteral ":" Value
+
+Value ::=
+      Literal
+    | Object
+    | Array
+    | AtomicBlock
+
+Array ::= "[" ValueList "]"
+
+ValueList ::= (Value ("," Value)*)?
+
+Literal ::=
+      StringLiteral
+    | NumericLiteral
+    | BooleanLiteral
+    | "null"
+
+AtomicBlock ::= "{" AtomicField+ "}"
+
+AtomicField ::=
+    '"@id"' ':' StringLiteral
+  | '"@type"' ':' StringLiteral
+  | '"@control"' ':' StringArray
+  | '"@flow"' ':' StringArray
+  | '"@view"' ':' Object
+  | '"@variable"' ':' Object
+  | '"@content"' ':' Value
+  | '"@html"' ':' StringLiteral
+  | '"@css"' ':' StringLiteral
+  | '"@js"' ':' StringLiteral
+
+StringArray ::= "[" StringLiteral ("," StringLiteral)* "]"
+
+(* XJSON invariant: semantic keys start with @ and describe structure;
+   non-@ keys are data. Atomic blocks use @control, @flow, @view,
+   @variable to bind to XCFE vectors without crossing into K'UHUL
+   enforcement. *)

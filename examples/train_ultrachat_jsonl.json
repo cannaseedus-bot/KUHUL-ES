@@ -1,0 +1,12 @@
+{
+  "dataset": "jsonl_chat",
+  "chatFile": "E:\\data\\ultrachat_jsonl\\ultrachat_basic_chat.jsonl",
+  "tokenizer": "tokenizer.json",
+  "seqLen": 8,
+  "maxRecords": 50000,
+  "maxSamples": 250000,
+  "embedDim": 64,
+  "hiddenDim": 128,
+  "lr": 0.12,
+  "steps": 200
+}

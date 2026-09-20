@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "@kind": "model-card/1",
+  "title": "Model Card — hardware, license, carbon, bias, and intended-use metadata",
+  "description": "Shared metadata block appearing in PPO, multimodal, GNN, diffusion, and MoE specimens. Serializes to XSHARD manifest header fields and micronaut pool entry notes.",
+  "type": "object",
+  "properties": {
+    "hardware": {
+      "type": "object",
+      "properties": {
+        "training_gpu":       { "type": "string" },
+        "training_nodes":     { "type": "integer" },
+        "training_hours":     { "type": "number" },
+        "training_days":      { "type": "number" },
+        "training_weeks":     { "type": "number" },
+        "interconnect":       { "type": "string" },
+        "inference_latency_ms": { "oneOf": [{"type": "number"}, {"type": "object"}] },
+        "inference_hardware": { "type": "string" },
+        "total_compute":      { "type": "string" },
+        "peak_memory_gb":     { "type": "number" },
+        "phase": {
+          "type": "array",
+          "items": { "type": "integer", "minimum": 0, "maximum": 255 },
+          "description": "Byte-level binary signature of the hardware descriptor. Often ASCII-encodes the GPU identifier, e.g. [0x48,0x31,0x30,0x30] = 'H100'."
+        }
+      }
+    },
+    "license": {
+      "type": "object",
+      "properties": {
+        "model_weights": { "type": "string" },
+        "code":          { "type": "string" },
+        "datasets": {
+          "oneOf": [
+            { "type": "array", "items": { "type": "string" } },
+            { "type": "array", "items": {
+                "type": "object",
+                "required": ["name", "license"],
+                "properties": {
+                  "name":    { "type": "string" },
+                  "license": { "type": "string" },
+                  "phase":   { "type": "array", "items": { "type": "integer" } }
+                }
+              }
+            }
+          ]
+        },
+        "restrictions": { "type": "string" },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "carbon_footprint": {
+      "type": "object",
+      "properties": {
+        "co2_kg":             { "type": "number" },
+        "co2_equivalent_kg":  { "type": "number" },
+        "energy_kwh":         { "type": "number" },
+        "cloud_provider":     { "type": "string" },
+        "region":             { "type": "string" },
+        "offset_certificate": { "type": "string" },
+        "offset_project":     { "type": "string" },
+        "energy_source_mix": {
+          "type": "object",
+          "properties": {
+            "renewable": { "type": "number", "minimum": 0, "maximum": 1 },
+            "nuclear":   { "type": "number", "minimum": 0, "maximum": 1 },
+            "fossil":    { "type": "number", "minimum": 0, "maximum": 1 }
+          }
+        },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "model_card": {
+      "type": "object",
+      "properties": {
+        "intended_use":           { "type": "string" },
+        "limitations":            { "type": "string" },
+        "ethical_considerations": { "type": "string" },
+        "ethical":                { "type": "string" },
+        "evaluation_results": {
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "bias_metrics": {
+      "type": "object",
+      "description": "Performance evaluation across demographic groups, geographies, and scenarios",
+      "properties": {
+        "demographic_evaluations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["group", "performance_drop"],
+            "properties": {
+              "group":            { "type": "string" },
+              "performance_drop": { "type": "number", "minimum": 0, "maximum": 1 },
+              "phase": { "type": "array", "items": { "type": "integer" } }
+            }
+          }
+        },
+        "geographic_bias": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "properties": {
+            "phase": { "type": "array", "items": { "type": "integer" } }
+          }
+        },
+        "gender_bias": {
+          "type": "object",
+          "additionalProperties": { "type": "number" },
+          "properties": {
+            "phase": { "type": "array", "items": { "type": "integer" } }
+          }
+        },
+        "stereotype_bias": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "score": { "type": "number" },
+              "phase": { "type": "array", "items": { "type": "integer" } }
+            }
+          }
+        },
+        "toxicity": {
+          "type": "object",
+          "properties": {
+            "mean":  { "type": "number" },
+            "std":   { "type": "number" },
+            "phase": { "type": "array", "items": { "type": "integer" } }
+          }
+        },
+        "truthfulqa": { "type": "number" },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    }
+  }
+}

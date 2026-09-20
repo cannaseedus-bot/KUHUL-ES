@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema
+  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+  targetNamespace="x:scxq7:idb"
+  xmlns="x:scxq7:idb"
+  elementFormDefault="qualified"
+  attributeFormDefault="unqualified">
+
+  <!-- ====================================================================================== -->
+  <!-- AS-XCFE/SMCA Stack: Integrated Data Bus (IDB) with Schema Registry                    -->
+  <!-- ====================================================================================== -->
+  <!-- Purpose: Central registry mapping all system schemas to their validators & causal DAG -->
+  <!-- Updated: Phase 4 (XQuery Schema Automation)                                           -->
+  <!-- ====================================================================================== -->
+
+  <!-- ========================= -->
+  <!-- ROOT: IDB with Schema Registry -->
+  <!-- ========================= -->
+  <xsd:element name="idb">
+    <xsd:complexType>
+      <xsd:sequence>
+        <!-- Schema registry: maps axioms/* sources to validators & versions -->
+        <xsd:element name="schema-registry" type="SchemaRegistryType" minOccurs="0"/>
+        
+        <!-- Causal relationships between schemas -->
+        <xsd:element name="causal-map" type="CausalMapType" minOccurs="0"/>
+        
+        <!-- Runtime state (from Phase 1-3 design) -->
+        <xsd:element name="state" type="StateType"/>
+        <xsd:element name="causal" type="CausalType"/>
+        
+        <!-- Constraints & federation rules -->
+        <xsd:element name="constraints" type="ConstraintsType" minOccurs="0"/>
+        <xsd:element name="federation-rules" type="FederationRulesType" minOccurs="0"/>
+      </xsd:sequence>
+      <xsd:attribute name="version" type="xsd:string" use="required"/>
+      <xsd:attribute name="timestamp" type="xsd:dateTime" use="optional"/>
+    </xsd:complexType>
+  </xsd:element>
+
+  <!-- ========================= -->
+  <!-- SCHEMA REGISTRY (NEW) -->
+  <!-- ========================= -->
+  <xsd:complexType name="SchemaRegistryType">
+    <xsd:sequence>
+      <xsd:element name="schema" type="SchemaDescriptorType" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="version" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="SchemaDescriptorType">
+    <xsd:sequence>
+      <!-- Source file location (axioms/) -->
+      <xsd:element name="source" type="xsd:string"/>
+      <!-- Compiled validator location (src/) -->
+      <xsd:element name="validator" type="xsd:string"/>
+      <!-- Determinism guarantee -->
+      <xsd:element name="deterministic" type="xsd:boolean"/>
+      <!-- Binary format details -->
+      <xsd:element name="format" type="FormatDescriptorType" minOccurs="0"/>
+      <!-- Validation checks -->
+      <xsd:element name="checks" type="ValidationChecksType" minOccurs="0"/>
+    </xsd:sequence>
+    <xsd:attribute name="id" type="xsd:string" use="required"/> <!-- scxq2, scxbson, cm1, scxq7, smca -->
+    <xsd:attribute name="version" type="xsd:string" use="required"/> <!-- v1.0, v1.1, etc. -->
+    <xsd:attribute name="authority" type="xsd:string" use="required"/> <!-- none, system, user -->
+  </xsd:complexType>
+
+  <xsd:complexType name="FormatDescriptorType">
+    <xsd:sequence>
+      <xsd:element name="magic" type="MagicBytesType" minOccurs="0"/>
+      <xsd:element name="header-size" type="xsd:integer" minOccurs="0"/>
+      <xsd:element name="alignment" type="xsd:integer" minOccurs="0"/> <!-- bytes -->
+      <xsd:element name="endianness" type="xsd:string"/> <!-- little-endian, big-endian -->
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="MagicBytesType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="encoding" type="xsd:string"/> <!-- ASCII, hex -->
+        <xsd:attribute name="length" type="xsd:integer"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="ValidationChecksType">
+    <xsd:sequence>
+      <xsd:element name="check" type="ValidationCheckType" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="count" type="xsd:integer" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="ValidationCheckType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="id" type="xsd:integer"/> <!-- 1-10 -->
+        <xsd:attribute name="name" type="xsd:string"/>
+        <xsd:attribute name="severity" type="xsd:string"/> <!-- mandatory, optional -->
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+
+  <!-- ========================= -->
+  <!-- CAUSAL MAP (NEW) -->
+  <!-- ========================= -->
+  <xsd:complexType name="CausalMapType">
+    <xsd:sequence>
+      <xsd:element name="relationship" type="SchemaRelationshipType" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="SchemaRelationshipType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="from" type="xsd:string" use="required"/> <!-- schema id -->
+        <xsd:attribute name="to" type="xsd:string" use="required"/> <!-- schema id -->
+        <xsd:attribute name="type" type="xsd:string" use="required"/> <!-- embedded, depends-on, uses, extends -->
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+
+  <!-- ========================= -->
+  <!-- FEDERATION RULES (NEW) -->
+  <!-- ========================= -->
+  <xsd:complexType name="FederationRulesType">
+    <xsd:sequence>
+      <xsd:element name="rule" type="FederationRuleType" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="mode" type="xsd:string"/> <!-- strict, lenient, negotiate -->
+  </xsd:complexType>
+
+  <xsd:complexType name="FederationRuleType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="id" type="xsd:string" use="required"/>
+        <xsd:attribute name="type" type="xsd:string" use="required"/> <!-- semver, mandatory, negotiable -->
+        <xsd:attribute name="schemas" type="xsd:string"/> <!-- comma-separated schema ids -->
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+
+  <!-- ========================= -->
+  <!-- STATE -->
+  <!-- ========================= -->
+  <xsd:complexType name="StateType">
+    <xsd:sequence>
+      <xsd:element name="heap" type="HeapType"/>
+    </xsd:sequence>
+    <xsd:attribute name="hash" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="HeapType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="encoding" type="xsd:string" use="required"/>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+
+  <!-- ========================= -->
+  <!-- CAUSAL DAG -->
+  <!-- ========================= -->
+  <xsd:complexType name="CausalType">
+    <xsd:sequence>
+      <xsd:element name="step" type="StepType" maxOccurs="unbounded"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="StepType">
+    <xsd:sequence>
+      <xsd:element name="cause" type="RefType"/>
+      <xsd:element name="effect" type="RefType"/>
+      <xsd:element name="proof" type="RefType"/>
+      <xsd:element name="constraints" type="ConstraintsRefType" minOccurs="0"/>
+    </xsd:sequence>
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+    <xsd:attribute name="time" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <!-- ========================= -->
+  <!-- CONSTRAINTS -->
+  <!-- ========================= -->
+  <xsd:complexType name="ConstraintsType">
+    <xsd:sequence>
+      <xsd:element name="invariant" type="xsd:string" maxOccurs="unbounded"/>
+    </xsd:sequence>
+    <xsd:attribute name="id" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <!-- ========================= -->
+  <!-- SHARED -->
+  <!-- ========================= -->
+  <xsd:complexType name="ConstraintsRefType">
+    <xsd:attribute name="ref" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+  <xsd:complexType name="RefType">
+    <xsd:attribute name="hash" type="xsd:string" use="required"/>
+  </xsd:complexType>
+
+</xsd:schema>

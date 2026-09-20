@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -19,17 +20,78 @@ namespace WebView2SmokeTest
     static class Program
     {
         [STAThread]
-        static async Task<int> Main(string[] args)
+        static void Main(string[] args)
         {
-            string root = args.Length > 0 ? args[0] : Directory.GetCurrentDirectory();
-            int port = args.Length > 1 && int.TryParse(args[1], out var p) ? p : 8080;
+            var t = new Thread(() => Run(args).GetAwaiter().GetResult());
+            t.SetApartmentState(ApartmentState.STA);
+            t.Start();
+            t.Join();
+        }
 
-            string userDataFolder = @"C:\Users\canna\\.NNC-K\\bin\\wv2_data"; // default provided path
+        static async Task Run(string[] args)
+        {
+            bool headless = args.Contains("--headless");
+            string[] filtered = args.Where(a => a != "--headless").ToArray();
+            string root = filtered.Length > 0 ? filtered[0] : Directory.GetCurrentDirectory();
+            int requestedPort = filtered.Length > 1 && int.TryParse(filtered[1], out var p) ? p : 8080;
+            if (requestedPort < 1 || requestedPort > 65535) requestedPort = 8080;
+            int port = FindAvailablePort(requestedPort, 32);
+            if (port != requestedPort)
+            {
+                Console.WriteLine($"Requested port {requestedPort} is busy; using {port}.");
+            }
+
+            string userDataFolder = Path.Combine(root, ".wv2_data");
+            Directory.CreateDirectory(userDataFolder);
             Console.WriteLine($"Serving root: {root} on http://localhost:{port}/");
             Console.WriteLine($"WebView2 userDataFolder: {userDataFolder}");
 
             using var cts = new CancellationTokenSource();
             var serverTask = Task.Run(() => RunStaticServer(root, port, cts.Token));
+            await Task.Delay(150);
+            if (serverTask.IsFaulted)
+            {
+                var startupError = serverTask.Exception?.GetBaseException().Message ?? "unknown startup failure";
+                Console.WriteLine("Failed to start static server: " + startupError);
+                Environment.ExitCode = 4;
+                return;
+            }
+
+            if (headless)
+            {
+                await Task.Delay(500); // let server start
+                using var client = new System.Net.Http.HttpClient();
+                string url = $"http://localhost:{port}/index.html";
+                try
+                {
+                    var response = await client.GetAsync(url, cts.Token);
+                    Console.WriteLine($"HEADLESS status {url}: {(int)response.StatusCode} {response.StatusCode}");
+                    var body = await response.Content.ReadAsStringAsync();
+                    bool hasSw = body.Contains("navigator.serviceWorker") || body.Contains("sw.js");
+                    bool hasManifest = body.Contains("manifest.webmanifest");
+                    Console.WriteLine($"HEADLESS index.html checks: serviceWorker={hasSw}, manifest={hasManifest}");
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Environment.ExitCode = 3;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("HEADLESS request failed: " + ex.Message);
+                    Environment.ExitCode = 3;
+                }
+                cts.Cancel();
+                try
+                {
+                    await serverTask;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Static server failed: " + ex.GetBaseException().Message);
+                    if (Environment.ExitCode == 0) Environment.ExitCode = 4;
+                }
+                return;
+            }
 
             Application.SetHighDpiMode(HighDpiMode.SystemAware);
             Application.EnableVisualStyles();
@@ -109,7 +171,8 @@ namespace WebView2SmokeTest
             catch (Exception ex)
             {
                 Console.WriteLine("Failed to create WebView2 environment: " + ex.Message);
-                return 2;
+                Environment.ExitCode = 2;
+                return;
             }
 
             // Run the form in a separate task so we can await the tcs
@@ -130,8 +193,15 @@ namespace WebView2SmokeTest
             // Close form and stop server
             try { form.BeginInvoke((Action)(() => form.Close())); } catch { }
             cts.Cancel();
-            await serverTask;
-            return 0;
+            try
+            {
+                await serverTask;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Static server failed: " + ex.GetBaseException().Message);
+                if (Environment.ExitCode == 0) Environment.ExitCode = 4;
+            }
         }
 
         static void RunStaticServer(string root, int port, CancellationToken token)
@@ -139,8 +209,22 @@ namespace WebView2SmokeTest
             var listener = new HttpListener();
             string prefix = $"http://localhost:{port}/";
             listener.Prefixes.Add(prefix);
-            listener.Start();
+            try
+            {
+                listener.Start();
+            }
+            catch (HttpListenerException ex)
+            {
+                throw new InvalidOperationException(
+                    $"Unable to bind {prefix} ({ex.Message}).",
+                    ex
+                );
+            }
             Console.WriteLine("Static server listening on " + prefix);
+            using var stopRegistration = token.Register(() =>
+            {
+                try { listener.Stop(); } catch { }
+            });
             while (!token.IsCancellationRequested)
             {
                 try
@@ -158,34 +242,86 @@ namespace WebView2SmokeTest
             Console.WriteLine("Static server stopped.");
         }
 
-        static void HandleContext(HttpListenerContext ctx, string root)
+        static int FindAvailablePort(int startPort, int attempts)
         {
-            var req = ctx.Request;
-            var resp = ctx.Response;
-            string urlPath = WebUtility.UrlDecode(req.Url.AbsolutePath.TrimStart('/'));
-            if (string.IsNullOrEmpty(urlPath)) urlPath = "index.html";
-            var filePath = Path.Combine(root, urlPath.Replace('/', Path.DirectorySeparatorChar));
-            if (!File.Exists(filePath))
+            int maxPort = Math.Min(65535, startPort + Math.Max(1, attempts) - 1);
+            for (int port = startPort; port <= maxPort; port++)
             {
-                resp.StatusCode = 404;
-                var buf = Encoding.UTF8.GetBytes("Not found");
-                resp.OutputStream.Write(buf, 0, buf.Length);
-                resp.Close();
-                return;
+                if (CanBindTcpPort(port)) return port;
             }
+            throw new InvalidOperationException(
+                $"No available localhost port in range {startPort}-{maxPort}."
+            );
+        }
+
+        static bool CanBindTcpPort(int port)
+        {
+            TcpListener? probe = null;
             try
             {
+                probe = new TcpListener(IPAddress.Loopback, port);
+                probe.Start();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+            finally
+            {
+                try { probe?.Stop(); } catch { }
+            }
+        }
+
+        static void HandleContext(HttpListenerContext ctx, string root)
+        {
+            try
+            {
+                HandleContextInner(ctx, root);
+            }
+            catch (ObjectDisposedException)
+            {
+                // Listener was closed while a queued request was in flight; ignore.
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Serve error: " + ex.Message);
+            }
+        }
+
+        static void HandleContextInner(HttpListenerContext ctx, string root)
+        {
+            try
+            {
+                var req = ctx.Request;
+                var resp = ctx.Response;
+                string urlPath = WebUtility.UrlDecode(req.Url.AbsolutePath.TrimStart('/'));
+                if (string.IsNullOrEmpty(urlPath)) urlPath = "index.html";
+                var filePath = Path.Combine(root, urlPath.Replace('/', Path.DirectorySeparatorChar));
+                if (!File.Exists(filePath))
+                {
+                    resp.StatusCode = 404;
+                    var buf = Encoding.UTF8.GetBytes("Not found");
+                    resp.OutputStream.Write(buf, 0, buf.Length);
+                    resp.Close();
+                    return;
+                }
                 byte[] data = File.ReadAllBytes(filePath);
                 resp.ContentType = GetContentType(filePath);
                 resp.ContentLength64 = data.Length;
                 resp.OutputStream.Write(data, 0, data.Length);
                 resp.OutputStream.Close();
             }
+            catch (ObjectDisposedException) { /* listener closed mid-request */ }
+            catch (HttpListenerException) { /* listener closed mid-request */ }
             catch (Exception ex)
             {
                 Console.WriteLine("Serve error: " + ex.Message);
             }
-            finally { resp.Close(); }
+            finally
+            {
+                try { ctx.Response.Close(); } catch { }
+            }
         }
 
         static string GetContentType(string path)

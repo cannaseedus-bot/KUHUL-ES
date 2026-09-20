@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "@kind": "xshard-train/1",
+  "title": "XSHARD Training Session Config",
+  "description": "Configuration for a kuhul-es train-webgl2-sweep / xshard_adapt host pass. Drives xshard_adapt_fold.hlsl (cs_5_0, entry CSMain). Mirrors the optimizer fields in atomic.manifest.json adapter entries (lr, steps, data path).",
+  "type": "object",
+  "required": ["model", "token_bin", "output_xshard"],
+  "properties": {
+    "model": {
+      "type": "string",
+      "description": "Model identifier — matches atomic.manifest.json .model.id"
+    },
+    "token_bin": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "One or more .bin token files produced by tokenize_transitions.py"
+    },
+    "shard_filter": {
+      "type": "object",
+      "description": "Restrict the pass to a subset of shards",
+      "properties": {
+        "fold": {
+          "type": "string",
+          "enum": ["Pop", "Wo", "Yax", "Sek", "Chen", "Xul", "all"],
+          "default": "all",
+          "description": "Only train shards tagged with this K'UHUL fold"
+        },
+        "dtype": {
+          "type": "string",
+          "enum": ["F32", "BF16", "F16", "INT8", "Q8_0", "Q4_K"],
+          "default": "F32"
+        },
+        "phase_min": {
+          "type": "number",
+          "description": "Min phase_angle (radians) — e.g. π (3.1416) to target Sek shards only"
+        },
+        "phase_max": {
+          "type": "number",
+          "description": "Max phase_angle (radians)"
+        }
+      }
+    },
+    "optimizer": {
+      "type": "string",
+      "enum": ["adam", "sgd", "adamw"],
+      "default": "adam",
+      "description": "Maps to xshard_adapt_fold.hlsl update_mode (0=Adam, 1=SGD)"
+    },
+    "steps_per_shard": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 64,
+      "description": "GPU dispatch iterations per shard — analogous to atomic.manifest.json .adapters[*].steps"
+    },
+    "lr": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 3e-5,
+      "description": "Base learning rate. Matches atomic.manifest.json .adapters[*].lr when present"
+    },
+    "beta1": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.9
+    },
+    "beta2": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.999
+    },
+    "epsilon": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 1e-8
+    },
+    "weight_decay": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0.01
+    },
+    "grad_clip": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 1.0,
+      "description": "Gradient clip norm. Maps to xshard_adapt_fold.hlsl sanitize_grad grad_clip"
+    },
+    "batch": {
+      "type": "integer",
+      "minimum": 1,
+      "default": 16
+    },
+    "checkpoint_policy": {
+      "type": "object",
+      "properties": {
+        "every_n_shards": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Write .xshard.meta.json checkpoint every N shards"
+        },
+        "on_loss_improvement": {
+          "type": "boolean",
+          "default": true
+        },
+        "output_dir": {
+          "type": "string",
+          "description": "Directory for intermediate checkpoints"
+        }
+      }
+    },
+    "output_xshard": {
+      "type": "string",
+      "description": "Path to output .xshard file (in-place adapted)"
+    },
+    "training": {
+      "type": "string",
+      "description": "Quality label written into the output manifest, e.g. 'finetooth combed'"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["runtime_expert", "domain_expert", "tool_expert"],
+      "default": "runtime_expert",
+      "description": "Expert kind written into the adapter registration on completion"
+    },
+    "portable": {
+      "type": "boolean",
+      "default": true
+    },
+    "domain": {
+      "type": "string",
+      "description": "Domain label for the resulting adapter. Matches atomic.manifest.json .adapters[*].domain"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "examples": [
+    {
+      "model": "from_zero_v0.6",
+      "token_bin": ["models/from_zero/tokens/model_arch.bin"],
+      "shard_filter": { "fold": "Sek", "dtype": "F32" },
+      "optimizer": "adam",
+      "steps_per_shard": 64,
+      "lr": 3e-5,
+      "beta1": 0.9,
+      "beta2": 0.999,
+      "epsilon": 1e-8,
+      "weight_decay": 0.01,
+      "grad_clip": 1.0,
+      "batch": 16,
+      "checkpoint_policy": { "every_n_shards": 12, "on_loss_improvement": true },
+      "output_xshard": "models/from_zero/from_zero_v0.6.xshard",
+      "training": "finetooth combed",
+      "kind": "runtime_expert",
+      "portable": true,
+      "domain": "model architecture — agentic coding, tool routing, MoE routing patterns",
+      "note": "runtime-agnostic expertise; loads onto any compatible carrier model"
+    }
+  ]
+}

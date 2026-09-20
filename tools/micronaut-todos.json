@@ -1,0 +1,54 @@
+[
+  {
+    "text": "Scaffold MX-2 manifest",
+    "status": "done"
+  },
+  {
+    "text": "Wire bots.py to native CLI",
+    "status": "done"
+  },
+  {
+    "text": "Launch WPF chat UI",
+    "status": "done"
+  },
+  {
+    "text": "Hook ingest/train commands",
+    "status": "done"
+  },
+  {
+    "text": "Persist todo state to JSON",
+    "status": "done"
+  },
+  {
+    "text": "Add WPF question/options widget",
+    "status": "done"
+  },
+  {
+    "text": "kuhul-runtime: MemoryMappedFile bridge",
+    "status": "done"
+  },
+  {
+    "text": "kuhul-runtime: FLWOR/XPath + Stelae",
+    "status": "done"
+  },
+  {
+    "text": "Atomic pipeline ngram→agents→blocks",
+    "status": "done"
+  },
+  {
+    "text": "Route chat through KX-1 not PowerShell",
+    "status": "active"
+  },
+  {
+    "text": "Replace PS subprocess with K'UHUL HTTP",
+    "status": "next"
+  },
+  {
+    "text": "Wire AtomicBlock feed to WPF live tape",
+    "status": "next"
+  },
+  {
+    "text": "fix swarm",
+    "status": "next"
+  }
+]

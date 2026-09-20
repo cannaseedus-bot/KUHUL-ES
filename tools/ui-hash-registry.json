@@ -1,0 +1,18 @@
+{
+  "name": "Atomic TUI OS",
+  "version": "1.0.0",
+  "routes": {
+    "/": {
+      "page": "home"
+    }
+  },
+  "pages": {
+    "home": {
+      "title": "Home",
+      "blocks": [
+        "hero"
+      ]
+    }
+  },
+  "sha256": "70e84b7e7926157f0776ae21cfb66a59c7d7c65973eda04ab0a26548676517b4"
+}

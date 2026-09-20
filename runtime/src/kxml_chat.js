@@ -21,6 +21,30 @@ const ROLES = {
   tool: 'TOOL_RESULT',
 };
 
+// Fold role tokens — turn boundaries keyed by K'UHUL phase.
+// Input fold sets cognitive mode; Xul is always the model response token.
+//   Pop  → observe / describe / explain
+//   Wo   → plan / schedule
+//   Yax  → branch / explore
+//   Sek  → code / execute
+//   Chen → verify / debug
+//   Xul  → emit  (model response — analogous to ASSISTANT)
+const FOLD_ROLES = {
+  Pop:  { open: '<POP>',  close: '</POP>',  id_open: 50282, id_close: 50283 },
+  Wo:   { open: '<WO>',   close: '</WO>',   id_open: 50284, id_close: 50285 },
+  Yax:  { open: '<YAX>',  close: '</YAX>',  id_open: 50286, id_close: 50287 },
+  Sek:  { open: '<SEK>',  close: '</SEK>',  id_open: 50288, id_close: 50289 },
+  Chen: { open: '<CHEN>', close: '</CHEN>', id_open: 50290, id_close: 50291 },
+  Xul:  { open: '<XUL>',  close: '</XUL>',  id_open: 50292, id_close: 50293 },
+};
+
+// Resolve a message role to its fold (if it is a fold role).
+function foldForRole(role) {
+  if (!role) return null;
+  const normalized = role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
+  return FOLD_ROLES[normalized] || null;
+}
+
 const SPECIALS = {
   bos: 'BOS',
   eos: 'EOS',
@@ -40,18 +64,38 @@ const TEMPLATE_SPEC = {
   note: 'KXML chat is trained into the token stream. The .jinja is the llama-compatible interop surface.',
 };
 
+// Render a single fold-role turn as a tagged string.
+// fold = 'Pop'|'Wo'|'Yax'|'Sek'|'Chen'|'Xul', content = string.
+// The model always responds in <XUL>…</XUL>.
+function renderFoldTurn(fold, content) {
+  const fr = FOLD_ROLES[fold];
+  if (!fr) throw new Error(`Unknown fold role: ${fold}`);
+  return `${fr.open}${content}${fr.close}`;
+}
+
+function renderFoldPrompt(fold, content) {
+  return renderFoldTurn(fold, content) + FOLD_ROLES.Xul.open;
+}
+
 function toJinja() {
   return (
     "{{ '<BOS>' }}"
     + "{% for m in messages %}"
-    + "{% if m['role'] == 'system' %}{{ '<I_EXPLAIN>' }}"
-    + "{% elif m['role'] in ['user', 'human'] %}{{ '<I_QUESTION>' }}"
-    + "{% elif m['role'] == 'assistant' %}{{ '<I_ANSWER>' }}"
-    + "{% elif m['role'] == 'tool' %}{{ '<TOOL_RESULT>' }}"
+    // Fold role turns (Pop/Wo/Yax/Sek/Chen/Xul)
+    + "{% if m['role'] in ['Pop','Wo','Yax','Sek','Chen','Xul','pop','wo','yax','sek','chen','xul'] %}"
+    + "{% set fr = '<' ~ m['role']|capitalize ~ '>' %}"
+    + "{% set fc = '</' ~ m['role']|capitalize ~ '>' %}"
+    + "{{ fr }}{{ m['content'] }}{{ fc }}"
+    + "{% if m['role']|lower != 'xul' %}{{ '<XUL>' }}{% endif %}"
+    // Standard KXML roles
+    + "{% elif m['role'] == 'system' %}{{ '<I_EXPLAIN>' }}{{ m['content'] }}"
+    + "{% elif m['role'] in ['user', 'human'] %}{{ '<I_QUESTION>' }}{{ m['content'] }}"
+    + "{% elif m['role'] == 'assistant' %}{{ '<I_ANSWER>' }}{{ m['content'] }}"
+    + "{% elif m['role'] == 'tool' %}{{ '<TOOL_RESULT>' }}{{ m['content'] }}"
     + "{% endif %}"
     + "{% if m.get('tool_call') %}{{ '<TOOL_CALL>' }}{{ '<T_' ~ m['tool_call']['name'] ~ '>' }}"
     + "{{ m['tool_call'].get('args', '') }}{{ '<TOOL_RESULT>' }}"
-    + "{% else %}{{ m['content'] }}{% endif %}"
+    + "{% endif %}"
     + "{{ '<SEP>' }}"
     + "{% endfor %}"
     + "{% if add_generation_prompt %}{{ '<I_ANSWER>' }}{% endif %}"
@@ -344,6 +388,7 @@ function renderForGguf(kxmlMessages, chatTemplate, opts = {}) {
 
 module.exports = {
   ROLES,
+  FOLD_ROLES,
   SPECIALS,
   TEMPLATE_SPEC,
   toJinja,
@@ -351,4 +396,7 @@ module.exports = {
   kxmlToMessages,
   renderForGguf,
   renderJinja,
+  renderFoldTurn,
+  renderFoldPrompt,
+  foldForRole,
 };

@@ -106,8 +106,10 @@ describe('CLI kxml command', () => {
     assert.match(r.stdout, /forward output shape/);
     assert.match(r.stdout, /KAST trace written/);
     const kast = JSON.parse(fs.readFileSync(path.join(tmpDir, 'kast.json'), 'utf8'));
-    assert.ok(kast.nodes.some(n => n.glyph === 'G_EMBED'));
-    assert.ok(kast.nodes.some(n => n.glyph === 'G_MATMUL'));
+    assert.equal(kast.protocol, 'kfold/1');
+    const allNodes = kast.folds.flatMap(f => f.nodes);
+    assert.ok(allNodes.some(n => n.glyph === 'G_EMBED'));
+    assert.ok(allNodes.some(n => n.glyph === 'G_MATMUL'));
 
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });

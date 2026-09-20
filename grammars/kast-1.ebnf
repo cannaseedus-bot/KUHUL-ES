@@ -1,0 +1,90 @@
+(* ========================================================
+   KAST/1 — K'UHUL Abstract Syntax Tree Grammar
+   Canonical semantic manifest for K'UHUL programs.
+   ======================================================== *)
+
+KastDocument ::= "{" KastHeader ("," KastField)* "}"
+
+KastHeader ::=
+    '"protocol"' ':' '"kast/1"'
+  | '"version"' ':' StringLiteral
+  | '"source"' ':' StringLiteral
+  | '"semantic_hash"' ':' StringLiteral
+
+KastField ::=
+    '"nodes"' ':' NodeList
+  | '"edges"' ':' EdgeList
+  | '"phases"' ':' PhaseList
+  | '"metadata"' ':' ObjectLiteral
+  | '"manifest"' ':' ObjectLiteral
+
+NodeList ::= "[" Node ("," Node)* "]"
+
+Node ::= "{" NodeField+ "}"
+
+NodeField ::=
+    '"id"' ':' StringLiteral
+  | '"index"' ':' Integer
+  | '"glyph"' ':' GlyphName
+  | '"opcode"' ':' StringLiteral
+  | '"symbol"' ':' StringLiteral
+  | '"operands"' ':' OperandList
+  | '"phase"' ':' PhaseName
+  | '"value"' ':' Literal
+  | '"metadata"' ':' ObjectLiteral
+
+OperandList ::= "[" Operand ("," Operand)* "]"
+
+Operand ::=
+    StringLiteral
+  | Integer
+  | "{" '"id"' ':' StringLiteral "}"
+  | "{" '"ref"' ':' StringLiteral "}"
+
+EdgeList ::= "[" Edge ("," Edge)* "]"
+
+Edge ::= "{" EdgeField+ "}"
+
+EdgeField ::=
+    '"from"' ':' StringLiteral
+  | '"to"' ':' StringLiteral
+  | '"kind"' ':' EdgeKind
+  | '"phase"' ':' PhaseName
+  | '"operand_index"' ':' Integer
+
+EdgeKind ::=
+    '"control"'
+  | '"data"'
+  | '"sequence"'
+  | '"admission"'
+  | '"semantic"'
+
+PhaseList ::= "[" PhaseName ("," PhaseName)* "]"
+
+PhaseName ::=
+    '"Pop"'
+  | '"Wo"'
+  | '"Yax"'
+  | '"Sek"'
+  | "'Ch'en'"
+  | '"Xul"'
+  | '"Noj"'
+
+GlyphName ::= PhaseName
+
+ObjectLiteral ::= "{" (Property ("," Property)*)? "}"
+Property ::= StringLiteral ":" Literal
+
+Literal ::=
+    StringLiteral
+  | NumericLiteral
+  | BooleanLiteral
+  | "null"
+  | ArrayLiteral
+
+ArrayLiteral ::= "[" (Literal ("," Literal)*)? "]"
+
+Integer ::= [0-9]+
+NumericLiteral ::= [0-9]+ ("." [0-9]+)?
+StringLiteral ::= "\"" .* "\""
+BooleanLiteral ::= "true" | "false"

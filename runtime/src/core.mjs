@@ -5,6 +5,7 @@ import { RuntimeParser } from './runtime_parser.mjs';
 import { ExpressionEvaluator } from './expression_evaluator.mjs';
 import { KuhulPhysics } from './physics.mjs';
 import { KuhulThinkEngine } from './think.mjs';
+import { FoldEngine } from './fold-engine.mjs';
 
 const DEFAULT_GLYPHS = ['Sek', 'Pop', 'Wo', "Ch'en", 'Yax', 'Xul', 'Noj'];
 
@@ -38,6 +39,13 @@ class KUHULRuntimeCore {
 
     this.physics = new KuhulPhysics();
     this.thinker = new KuhulThinkEngine(opts.thinkerOpts || {});
+
+    // Fold engine (lazy semantic expansion)
+    try {
+      this.foldEngine = new FoldEngine({ physics: this.physics, maxDepth: opts.maxFoldDepth || 32 });
+    } catch (e) {
+      this.foldEngine = null;
+    }
 
     this._glyphImpl = {
       Sek: this._executeSek.bind(this),

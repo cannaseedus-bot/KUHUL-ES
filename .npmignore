@@ -1,0 +1,4 @@
+# Development artifacts
+*.old
+*.log
+node_modules/

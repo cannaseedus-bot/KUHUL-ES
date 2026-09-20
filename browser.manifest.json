@@ -1,6 +1,6 @@
 {
   "name": "kuhul-es",
-  "version": "1.4.0",
+  "version": "1.7.0",
   "description": "K'UHUL-ES browser runtime — ECMAScript syntax, K'UHUL semantics, KXML inference",
   "manifest_version": 1,
   "entry_points": {
@@ -23,6 +23,8 @@
     "./runtime/trainer": "./runtime/src/trainer.js",
     "./runtime/kxml": "./runtime/src/kxml_driver.js",
     "./runtime/kxml/chat": "./runtime/src/kxml_chat.js",
+    "./runtime/chat": "./runtime/src/chat_bridge.js",
+    "./runtime/kuhul-e": "./runtime/src/kuhul-e.js",
     "./runtime/stb": "./runtime/src/stb_reader.js",
     "./runtime/core": {
       "node": "./runtime/src/core.js",
@@ -44,7 +46,10 @@
     "kxml-inference",
     "stb-tensor-loading",
     "pwa-service-worker",
-    "offline-execution"
+    "offline-execution",
+    "fold-engine",
+    "chat-bridge",
+    "kuhul-e"
   ],
   "kxml": {
     "model_manifest_format": "khanary-model-stb/v1",
@@ -58,10 +63,19 @@
     "supported_phases": [
       "Pop",
       "Wo",
+      "Yax",
       "Sek",
       "Ch'en",
       "Xul"
     ],
+    "fold_role_tokens": {
+      "Pop":  { "open": "<POP>",  "close": "</POP>",  "id_open": 50282, "id_close": 50283, "mode": "observe" },
+      "Wo":   { "open": "<WO>",   "close": "</WO>",   "id_open": 50284, "id_close": 50285, "mode": "schedule" },
+      "Yax":  { "open": "<YAX>",  "close": "</YAX>",  "id_open": 50286, "id_close": 50287, "mode": "branch" },
+      "Sek":  { "open": "<SEK>",  "close": "</SEK>",  "id_open": 50288, "id_close": 50289, "mode": "execute" },
+      "Chen": { "open": "<CHEN>", "close": "</CHEN>", "id_open": 50290, "id_close": 50291, "mode": "verify" },
+      "Xul":  { "open": "<XUL>",  "close": "</XUL>",  "id_open": 50292, "id_close": 50293, "mode": "emit — model response token" }
+    },
     "node_to_fold_mapping": {
       "EMBED_NODE": "Pop",
       "LAYERNORM_NODE": "Wo",
@@ -76,13 +90,18 @@
     "path": "sw.js",
     "scope": ".",
     "type": "module",
-    "cache_name": "kuhul-es-v1.4.0",
+    "cache_name": "kuhul-es-v1.6.0",
     "precache": [
       "./",
       "./index.html",
       "./browser.manifest.json",
       "./manifest.webmanifest",
       "./runtime/src/core.mjs",
+      "./runtime/src/fold-engine.mjs",
+      "./runtime/src/chat_bridge.mjs",
+      "./runtime/src/kxml_chat.mjs",
+      "./runtime/src/think.mjs",
+      "./runtime/src/pattern_reasoner.mjs",
       "./runtime/src/browser.js",
       "./pcre2/pcre2.js",
       "./pcre2/pcre2.wasm"
@@ -106,7 +125,20 @@
       "runtime/src/runtime_parser.js",
       "runtime/src/kxml_driver.js",
       "runtime/src/kxml_chat.js",
+      "runtime/src/kxml_chat.mjs",
+      "runtime/src/chat_bridge.js",
+      "runtime/src/chat_bridge.mjs",
+      "runtime/src/kuhul-e.js",
+      "runtime/src/kuhul-e.mjs",
+      "runtime/src/domain-stack.js",
+      "runtime/src/domain-stack.mjs",
+      "runtime/src/response-pattern.js",
+      "runtime/src/response-pattern.mjs",
       "runtime/src/stb_reader.js",
+      "runtime/src/fold-engine.js",
+      "runtime/src/fold-engine.mjs",
+      "runtime/src/fold-engine.ts",
+      "runtime/src/fold-engine.d.ts",
       "runtime/src/glsl_kernels.js",
       "pcre2/pcre2.js",
       "pcre2/pcre2.wasm"

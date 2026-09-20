@@ -1,19 +1,52 @@
 {
   "name": "kuhul-es",
-  "version": "1.4.0",
+  "version": "1.7.0",
   "main": "src/index.js",
-  "browser": "runtime/src/browser.js",
+  "browser": "./runtime/src/browser.js",
+  "exports": {
+    ".": {
+      "import": "./runtime/src/unified.mjs",
+      "require": "./src/index.js",
+      "default": "./src/index.js"
+    },
+    "./node": "./src/index.js",
+    "./browser": "./runtime/src/core.mjs",
+    "./runtime/core": "./runtime/src/core.js",
+    "./runtime/core.mjs": "./runtime/src/core.mjs",
+    "./runtime/unified": "./runtime/src/unified.js",
+    "./runtime/unified.mjs": "./runtime/src/unified.mjs",
+    "./runtime/chat": "./runtime/src/chat_bridge.js",
+    "./runtime/chat.mjs": "./runtime/src/chat_bridge.mjs",
+    "./runtime/kuhul-e": "./runtime/src/kuhul-e.js",
+    "./runtime/kuhul-e.mjs": "./runtime/src/kuhul-e.mjs",
+    "./runtime/kxml": "./runtime/src/kxml_driver.js",
+    "./runtime/kxml/chat": "./runtime/src/kxml_chat.js",
+    "./runtime/kxml/chat.mjs": "./runtime/src/kxml_chat.mjs",
+    "./runtime/skeleton-templates": "./runtime/src/skeleton_templates.js",
+    "./runtime/micronaut-bridges": "./runtime/src/micronaut_bridges.js",
+    "./runtime/scxq2": "./runtime/src/scxq2.js",
+    "./runtime/fold": "./runtime/src/fold-engine.js",
+    "./runtime/fold.mjs": "./runtime/src/fold-engine.mjs"
+  },
   "bin": {
-    "kuhul-es": "bin/kuhul-es.js"
+    "kuhul-es": "bin/kuhul-es.js",
+    "basher": "bin/basher.js",
+    "kuhul-server": "bin/kuhul-server.js"
   },
   "scripts": {
     "test": "node --test test/*.test.js",
-    "build": "echo 'No build step required; runtime is plain CommonJS'",
+    "build": "npm run build:fold",
+    "build:fold": "node scripts/build-fold-engine.js",
     "build:pcre2": "node scripts/copy-pcre2.js",
     "prepare-pcre2": "node scripts/copy-pcre2.js || true",
     "postinstall": "npm run build:pcre2",
     "start": "node bin/kuhul-es.js",
-    "doctor": "node -e \"require('fs').accessSync('bin/kuhul-es.js'); console.log('CLI OK')\""
+    "doctor": "node -e \"require('fs').accessSync('bin/kuhul-es.js'); console.log('CLI OK')\"",
+    "extract-bin": "node scripts/extract-bin.js",
+    "train:native": "node bin/kuhul-es.js train-native",
+    "train:webgl2": "node bin/kuhul-es.js train-webgl2",
+    "train:webgl2-sweep": "node bin/kuhul-es.js train-webgl2-sweep",
+    "train:xshard": "node bin/kuhul-es.js train-xshard"
   },
   "files": [
     "bin/",
@@ -21,7 +54,10 @@
     "runtime/",
     "compiler/",
     "kxml/",
+    "schemas/",
+    "grammars/",
     "pcre2/",
+    "scripts/extract-bin.js",
     "index.html",
     "manifest.webmanifest",
     "browser.manifest.json",
@@ -38,8 +74,11 @@
     "commander": "^11.0.0",
     "typescript": "^5.9.3"
   },
+  "optionalDependencies": {
+    "@huggingface/tokenizers": "^0.19.4"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0"
   },
-  "description": "K'UHUL-ES — ECMAScript syntax, K'UHUL semantics + physics + thinking + KXML inference"
+  "description": "K'UHUL-ES — ECMAScript syntax, K'UHUL semantics + physics + thinking + KXML inference + WebGL2/native/XSHARD training"
 }

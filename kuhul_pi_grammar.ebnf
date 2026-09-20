@@ -1,17 +1,17 @@
 (* ========================================================
-   KUHUL π CANONICAL GRAMMAR v1.1
-   Frozen · Minimum Viable Law · Enforcement-Only
+   K'UHUL-ES CANONICAL GRAMMAR v2.0
+   ECMAScript syntax · K'UHUL semantics
    ======================================================== *)
 
 (* ========================================================
    0. VERSION & STATUS
    ======================================================== *)
-GrammarVersion ::= "KUHUL_PI_GRAMMAR" "v1.1"
+GrammarVersion ::= "KUHUL_PI_GRAMMAR" "v2.0"
 GrammarStatus  ::= "CANONICAL" | "FROZEN"
 
-(* Status: CANONICAL
-   Mutation: FORBIDDEN
-   Authority: KUHUL π ONLY *)
+(* Status: CANONICAL for kuhul-es 1.5.0
+   Surface syntax: ECMAScript (Node 18+, browsers via ESM)
+   Semantic runtime: K'UHUL phase glyphs + physics + KAST + KXML *)
 
 (* ========================================================
    1. ARCHITECTURAL BOUNDARY (LOCKED)
@@ -23,50 +23,36 @@ MicronautDomain ::= OrchestrationLayer
 KuhulDomain     ::= EnforcementLayer
 ExtrapolationSystem ::= NarrativeExpansion
 
+(* Invariant: Micronaut cannot define, enforce, collapse, or reject.
+   KUHUL π cannot orchestrate, schedule, branch, or negotiate.
+   Extrapolator expands without altering collapse. *)
+
 (* ========================================================
-   2. DOMAIN DEFINITIONS (ORTHOGONAL)
+   2. DOMAIN DEFINITIONS
    ======================================================== *)
 OrchestrationLayer ::= "MICRONAUT" "{" ContextOrchestration "}"
 EnforcementLayer   ::= "KUHUL_π"   "{" LawEnforcement "}"
 NarrativeExpansion ::= "EXTRAPOLATOR" "{" ExtrapolationLaw "}"
 
-(* ========================================================
-   3. MICRONAUT (ORCHESTRATION ONLY)
-   ======================================================== *)
 ContextOrchestration ::=
       "SELECT"  FieldPresentation
     | "ARRANGE" CollapseTiming
     | "CHOOSE"  FieldSelection
     | "MANAGE"  HostReality
 
-(* Invariant: Micronaut cannot define, enforce, collapse, or reject. *)
-
-(* ========================================================
-   4. KUHUL π (ENFORCEMENT ONLY)
-   ======================================================== *)
 LawEnforcement ::=
       "DEFINE"   ExecutionDefinition
     | "ENFORCE"  Invariant
     | "REJECT"   IllegalState
     | "COLLAPSE" ToLaw
 
-(* Invariant: KUHUL π cannot orchestrate, schedule, branch, or negotiate. *)
-
-(* ========================================================
-   5. EXTRAPOLATOR (RAMBLE ENGINE)
-   ======================================================== *)
 ExtrapolationLaw ::=
       "EXPAND" ProjectionSpace
     | "ASSERT" ExtrapolationInvariant
 
 ProjectionSpace ::=
-      "metaphor"
-    | "analogy"
-    | "framing"
-    | "discipline"
-    | "perspective"
-    | "caveat"
-    | "philosophy"
+      "metaphor" | "analogy" | "framing" | "discipline"
+    | "perspective" | "caveat" | "philosophy"
 
 ExtrapolationInvariant ::=
       "'read_only_collapse_result'"
@@ -75,28 +61,180 @@ ExtrapolationInvariant ::=
     | "'infinite_extrapolation_allowed'"
     | "'finite_execution_enforced'"
 
-(* Key Law: Extrapolation never alters collapse. *)
+(* ========================================================
+   3. ECMASCRIPT SURFACE SYNTAX
+   ======================================================== *)
+KuhulProgram ::= StatementList | BlockProgram
+
+StatementList ::= ( Statement ";"? )*
+
+Statement ::=
+      PiBinding
+    | TauBinding
+    | FunctionDeclaration
+    | GlyphCallStatement
+    | KxmlStatement
+    | BlockStatement
+    | ExpressionStatement
+    | ReturnStatement
 
 (* ========================================================
-   6. KUHUL π PROGRAM STRUCTURE
+   4. ATOMIC BLOCK SYNTAX (C@@L / KHL / ROM STYLE)
    ======================================================== *)
-KuhulProgram ::= πBlock+
+BlockProgram ::= Block+
 
-πBlock ::= "⟁π⟁" πContent "⟁Xul⟁"
-πContent ::= (Declaration | Perception | Collapse | Output | ProofConstruct)*
+BlockStatement ::= Block
+
+Block ::= BlockHeader BlockBody BlockFooter
+
+BlockHeader ::= "[" GlyphName (Identifier | StringLiteral)? "]"
+
+BlockBody ::=
+      ( BlockLine "→"? )*
+    | "⟁" Identifier "⟁" BlockBody "⟁ Xul ⟁"
+
+BlockLine ::=
+      GlyphChain
+    | LoopBlock
+    | IfBlock
+    | DispatchBlock
+    | AssignmentLine
+    | Expression
+
+GlyphChain ::= GlyphStep ( "→" GlyphStep )*
+
+GlyphStep ::=
+      "[" GlyphName Expression "]"
+    | "[" GlyphName Identifier "=" Expression "]"
+    | "[" "Yax" Expression "]"→"[" "Sek" Expression "]"
+    | "[Wo" Expression "]"→"[Ch'en" Identifier "]"
+
+LoopBlock ::=
+    "[@loop" Expression "]"→"[" BlockBody "]"
+
+IfBlock ::=
+    "[@if" Expression "]"→"[@then" BlockBody "]"→"[@else" BlockBody "]"
+
+DispatchBlock ::=
+    "[@dispatch" Expression "]"→"[" CaseClause* "]"
+
+CaseClause ::= "→" "[@case" (StringLiteral | Identifier) "]"→"[" BlockBody "]"
+
+AssignmentLine ::=
+    "[Wo" Expression "]"→"[Yax" Identifier (Identifier)? "]"→"[Sek" Identifier "]"
+
+BlockFooter ::= "[Xul]"
+
+(* Invariant: every block begins with a phase header and ends with Xul.
+   The arrow (→) denotes causality / data flow between atomic steps. *)
 
 (* ========================================================
-   7. DECLARATIONS (INVARIANTS ONLY)
+   4. BINDINGS
    ======================================================== *)
-Declaration ::=
-      EntropyDeclaration
-    | InvariantDeclaration
-    | CarrierDeclaration
-    | FieldDeclaration
+PiBinding ::= "pi" Identifier "=" Expression
+TauBinding ::= "tau" Identifier "=" Expression
 
-EntropyDeclaration ::= "⟁Wo⟁" "entropy" "=" "0.21"
+(* pi  = immutable binding / law
+   tau = temporal binding / history-aware mutable state *)
 
-InvariantDeclaration ::= "⟁Wo⟁" "invariant" "=" InvariantName
+(* ========================================================
+   5. FUNCTIONS
+   ======================================================== *)
+FunctionDeclaration ::= "function" "*" Identifier "(" ParameterList ")" "{" FunctionBody "}"
+ParameterList ::= Identifier ("," Identifier)*
+FunctionBody ::= ( GlyphYield | Statement )*
+
+GlyphYield ::= "yield" "*" GlyphCall ";"?
+
+(* ========================================================
+   6. PHASE GLYPHS
+   ======================================================== *)
+GlyphCall ::= GlyphName "(" ArgumentList ")"
+
+GlyphName ::=
+      "Pop"
+    | "Wo"
+    | "Yax"
+    | "Sek"
+    | "Ch'en"
+    | "Xul"
+    | "Noj"
+
+ArgumentList ::= Expression ("," Expression)*
+
+(* Phase meaning:
+   Pop   — perceive / input
+   Wo    — represent / build / bind
+   Yax   — plan / condition / intention
+   Sek   — execute / compute / act
+   Ch'en — project / output
+   Xul   — consolidate / collapse
+   Noj   — controlled reflection / bounded reasoning *)
+
+(* ========================================================
+   7. KXML INTEROPERABILITY
+   ======================================================== *)
+KxmlStatement ::=
+      "kxml" "run" StringLiteral (KxmlOptions)?
+    | "kxml" "chat" StringLiteral "with" KxmlContext
+    | "kxml" "render" StringLiteral "using" StringLiteral
+
+KxmlOptions ::= "{" (KxmlOption ("," KxmlOption)*) "}"
+KxmlOption ::= Identifier ":" Expression
+
+KxmlContext ::= "{" (KeyValuePair ("," KeyValuePair)*) "}"
+KeyValuePair ::= Identifier ":" Expression
+
+(* KXML forwards graphs to the kast/1 → kfold/1 semantic runtime,
+   supports tool-aware Jinja chat templates, and may route through
+   the browser service worker or a local inference sidecar. *)
+
+(* ========================================================
+   8. EXPRESSIONS
+   ======================================================== *)
+Expression ::=
+      Literal
+    | Identifier
+    | GlyphCall
+    | ObjectLiteral
+    | ArrayLiteral
+    | BinaryExpression
+    | UnaryExpression
+    | ParenthesizedExpression
+
+Literal ::=
+      NumericLiteral
+    | StringLiteral
+    | BooleanLiteral
+    | "null"
+
+ObjectLiteral ::= "{" (Property ("," Property)*)? "}"
+Property ::= Identifier ":" Expression
+
+ArrayLiteral ::= "[" (Expression ("," Expression)*)? "]"
+
+BinaryExpression ::= Expression Operator Expression
+Operator ::= "+" | "-" | "*" | "/" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
+
+UnaryExpression ::= ("!" | "-" | "+") Expression
+ParenthesizedExpression ::= "(" Expression ")"
+
+(* ========================================================
+   9. COMPRESSION / KAST (SCXQ2)
+   ======================================================== *)
+CompressionLaw ::=
+      Expression "↻" "'scxq2'"
+    | "compress_as_law" "(" Expression ")"
+
+(* Rule: If compression fails → state was never executable.
+   Implementation: runtime/src/scxq2.js provides compress/decompress. *)
+
+(* ========================================================
+   10. ILLEGAL STATES
+   ======================================================== *)
+IllegalStatePrevention ::=
+      "unreachable_state" "(" ")"
+    | "violation" "(" InvariantName ")"
 
 InvariantName ::=
       "'collapse_only'"
@@ -105,96 +243,7 @@ InvariantName ::=
     | "'unreachable_states'"
 
 (* ========================================================
-   8. CARRIERS (SEMANTIC WHITESPACE)
-   ======================================================== *)
-CarrierDeclaration ::= "⟁Wo⟁" "carriers" "=" "[" CarrierList "]"
-CarrierList ::= Carrier ("," Carrier)*
-
-Carrier ::= "' '" | "'\n'" | "'\t'"
-
-(* ========================================================
-   9. FIELD DEFINITIONS
-   ======================================================== *)
-FieldDeclaration ::= "⟁Wo⟁" "field." FieldName FieldDefinition
-
-FieldName ::= "space" | "newline" | "tab"
-
-FieldDefinition ::= "{" FieldProperties "}"
-
-FieldProperties ::=
-      "type:" FieldType ","
-      "curvature:" "executable"
-      ("," FieldProperty)*
-
-FieldType ::= "'vacuum'" | "'boundary'" | "'structure'"
-
-FieldProperty ::=
-      "hosts:" HostType
-    | "constraint:" ConstraintName
-
-HostType ::= "micronaut*" | "collapse_points" | "phase_transitions"
-
-ConstraintName ::= "'no_injection'" | "'read_only'" | "'geometry_only'"
-
-(* ========================================================
-   10. PERCEPTION (NO PARSING)
-   ======================================================== *)
-Perception ::= "⟁Sek⟁" "perceive" PerceptionTarget
-
-PerceptionTarget ::= "input" | FieldReference | "current_field"
-
-FieldReference ::= "field" | "current_field" | "field." FieldName
-
-(* ========================================================
-   11. COLLAPSE (ONLY OPERATION)
-   ======================================================== *)
-Collapse ::= "⟁Sek⟁" CollapseOperation CollapseTarget
-
-CollapseOperation ::=
-      "collapse_to_law"
-    | "collapse_with_max_weight"
-    | "enforce_collapse_only"
-
-CollapseTarget ::= "signal" | "curvature" | "field" | "current_state"
-
-(* ========================================================
-   12. OUTPUT (PROJECTION ONLY)
-   ======================================================== *)
-Output ::= "⟁Sek⟁" OutputOperation OutputTarget
-
-OutputOperation ::= "produce_output" | "project_to" | "render_as"
-
-OutputTarget ::= "'css'" | "'dom'" | "'svg'" | "'canvas'" | "'terminal'"
-
-(* ========================================================
-   13. MICRONAUT EMERGENCE (NOT INJECTION)
-   ======================================================== *)
-MicronautEmergence ::=
-      "emerge_micronaut" "(" FieldCurvature ")"
-    | "extract_minimal_irregularity" "(" FieldCurvature ")"
-
-FieldCurvature ::= "field_curvature"
-
-(* ========================================================
-   14. COMPRESSION AS LAW
-   ======================================================== *)
-CompressionLaw ::=
-      Expression "↻" "'scxq2'"
-    | "compress_as_law" "(" Expression ")"
-
-Expression ::= "expression"
-
-(* Rule: If compression fails → state was never executable. *)
-
-(* ========================================================
-   15. ILLEGAL STATES (UNREACHABLE)
-   ======================================================== *)
-IllegalStatePrevention ::=
-      "unreachable_state" "(" ")"
-    | "violation" "(" InvariantName ")"
-
-(* ========================================================
-   16. EXECUTION PIPELINE (SINGULAR)
+   11. EXECUTION PIPELINE
    ======================================================== *)
 ExecutionPipeline ::=
     "perceive_as_field" "(" "curvature_only" ")" "→"
@@ -203,33 +252,32 @@ ExecutionPipeline ::=
     "output"
 
 (* ========================================================
-   17. PROOF CONSTRUCTS (NON-OPTIONAL)
+   12. PROOF CONSTRUCTS
    ======================================================== *)
-ProofDeclaration ::= "⟁Wo⟁" "proof." ProofName ProofDefinition
-
+ProofDeclaration ::= "proof." ProofName ProofDefinition
 ProofName ::= "collapse_only" | "one_outcome" | "separation"
-
 ProofDefinition ::= "{" ProofContent "}"
-
-ProofConstruct ::= ProofDeclaration
 ProofContent ::= "proof_content"
 
 (* ========================================================
-   18. CONTROL FLOW (ABSENT BY LAW)
+   13. CONTROL FLOW (ABSENT BY LAW IN K'UHUL CORE)
    ======================================================== *)
-(* NO IF
-   NO LOOPS
-   NO BRANCHING
-   NO PARALLELISM
-   NO MUTATION *)
+(* NO IF inside pure K'UHUL law.
+   NO LOOPS inside pure K'UHUL law.
+   NO BRANCHING inside pure K'UHUL law.
+   NO PARALLELISM inside pure K'UHUL law.
+   NO MUTATION of pi-bound law.
+
+   Branching and iteration are permitted in the ECMAScript orchestration
+   layer (Micronaut), not in K'UHUL enforcement. *)
 
 (* ========================================================
-   19. COMMENTS (NON-SEMANTIC)
+   14. COMMENTS
    ======================================================== *)
-Comment ::= "(*" .* "*)" | "#" .*
+Comment ::= "(*" .* "*)" | "#" .* | "//" .* | "/*" .* "*/"
 
 (* ========================================================
-   20. FINAL CANONICAL STATEMENTS
+   15. CANONICAL STATEMENTS
    ======================================================== *)
 CanonicalStatement ::=
     "Micronaut orchestrates contexts."
@@ -242,6 +290,6 @@ CanonicalStatement ::=
 (* ========================================================
    FINAL LOCK
    ======================================================== *)
-(* This grammar is deterministic, replay-identical, non-extensible,
+(* This grammar is deterministic, replay-identical,
    enforcement-only, Micronaut-safe, and Ramble-compatible.
-   Nothing is missing. Extensions contradict the proof. *)
+   Extensions that cross the locked boundaries contradict the proof. *)

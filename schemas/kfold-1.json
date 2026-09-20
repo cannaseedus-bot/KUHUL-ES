@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kuhul.dev/schema/kfold-1.json",
+  "title": "K'UHUL Fold/Node Graph",
+  "type": "object",
+  "required": ["protocol", "entry_fold", "folds"],
+  "properties": {
+    "protocol": { "const": "kfold/1" },
+    "entry_fold": { "type": "string" },
+    "folds": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/fold" }
+    },
+    "semantic_hash": { "type": "string" }
+  },
+  "definitions": {
+    "fold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "phase", "axis", "state", "nodes"],
+      "properties": {
+        "id": { "type": "string" },
+        "phase": { "enum": ["Pop", "Wo", "Yax", "Sek", "Ch'en", "Xul"] },
+        "axis": { "const": "vertical" },
+        "state": { "enum": ["collapsed", "admitted", "unfolded", "executing", "committed"] },
+        "parent": { "type": ["string", "null"] },
+        "depth": { "type": "integer", "minimum": 0 },
+        "nodes": { "type": "array", "items": { "$ref": "#/definitions/node" } },
+        "unfolds": { "type": "array", "items": { "$ref": "#/definitions/unfold" }, "default": [] },
+        "attributes": { "type": "object" }
+      }
+    },
+    "node": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "index", "axis", "lane", "glyph", "opcode", "operands"],
+      "properties": {
+        "id": { "type": "string" },
+        "index": { "type": "integer", "minimum": 0 },
+        "axis": { "const": "linear" },
+        "lane": { "type": "string" },
+        "glyph": { "type": "string" },
+        "opcode": { "type": "string" },
+        "symbol": { "type": "string" },
+        "operands": { "type": "array" },
+        "result": {},
+        "attributes": { "type": "object" }
+      }
+    },
+    "unfold": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "gate"],
+      "properties": {
+        "target": { "type": "string" },
+        "gate": { "enum": ["always", "capability", "pressure", "confidence", "dependency", "explicit"] },
+        "condition": {},
+        "ordinal": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

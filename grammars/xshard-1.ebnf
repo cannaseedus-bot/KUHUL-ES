@@ -1,0 +1,86 @@
+(* ============================================================
+   XSHARD/1 — Streaming Tensor Shard Format — Manifest Grammar
+   Covers the JSON manifest embedded in the binary file header.
+   Binary frame (magic, version, flags, lengths) described in
+   XSHARD.md; this grammar governs the UTF-8 JSON payload only.
+   ============================================================ *)
+
+XshardManifest ::=
+    "{" ManifestField ("," ManifestField)* "}"
+
+ManifestField ::=
+    '"@kind"'        ":" '"xshard/1"'
+  | '"version"'      ":" "1"
+  | '"created"'      ":" StringLiteral
+  | '"model"'        ":" StringLiteral
+  | '"arch"'         ":" StringLiteral
+  | '"n_layer"'      ":" PositiveInteger
+  | '"n_embd"'       ":" PositiveInteger
+  | '"n_head"'       ":" PositiveInteger
+  | '"vocab_size"'   ":" PositiveInteger
+  | '"dtype_default"' ":" DtypeName
+  | '"alignment"'    ":" AlignmentValue
+  | '"n_shards"'     ":" PositiveInteger
+  | '"state_start"'  ":" NonNegativeInteger
+  | '"data_start"'   ":" NonNegativeInteger
+  | '"shards"'       ":" ShardList
+
+ShardList ::= "[" ShardRecord ("," ShardRecord)* "]"
+
+ShardRecord ::= "{" ShardField ("," ShardField)* "}"
+
+ShardField ::=
+    '"id"'            ":" StringLiteral
+  | '"seq"'           ":" NonNegativeInteger
+  | '"tensor_name"'   ":" StringLiteral
+  | '"fold"'          ":" PhaseName
+  | '"phase_angle"'   ":" PhaseAngle
+  | '"shape"'         ":" IntArray
+  | '"dtype"'         ":" DtypeName
+  | '"stride"'        ":" IntArray
+  | '"offset"'        ":" NonNegativeInteger
+  | '"nbytes"'        ":" PositiveInteger
+  | '"sha256"'        ":" Sha256Hex
+  | '"shard_of"'      ":" StringLiteral
+  | '"shard_index"'   ":" NonNegativeInteger
+  | '"shard_count"'   ":" PositiveInteger
+  | '"shard_axis"'    ":" NonNegativeInteger
+  | '"shard_slice"'   ":" SlicePair
+  | '"training_steps"' ":" NonNegativeInteger
+  | '"best_loss"'     ":" (Number | "null")
+
+(* ─── Terminals ─── *)
+
+PhaseName ::=
+    '"Pop"'   (* observe — 0.0 rad *)
+  | '"Wo"'    (* schedule — π/3 rad *)
+  | '"Yax"'   (* branch — 2π/3 rad *)
+  | '"Sek"'   (* execute — π rad *)
+  | '"Chen"'  (* verify — 4π/3 rad *)
+  | '"Xul"'   (* emit — 5π/3 rad *)
+
+DtypeName ::=
+    '"F32"'   (* IEEE 754 32-bit float *)
+  | '"BF16"'  (* bfloat16 *)
+  | '"F16"'   (* IEEE 754 16-bit float *)
+  | '"INT8"'  (* signed 8-bit integer *)
+  | '"Q8_0"'  (* 8-bit quantized, GGUF Q8_0 layout *)
+  | '"Q4_K"'  (* 4-bit K-quantization, GGUF Q4_K layout *)
+
+AlignmentValue ::= "16" | "32" | "64" | "128"
+
+PhaseAngle ::= Number  (* 0.0 ≤ x < 2π *)
+
+SlicePair ::= "[" NonNegativeInteger "," NonNegativeInteger "]"
+              (* [start_inclusive, end_exclusive] in shard_axis dimension *)
+
+IntArray ::= "[" Integer ("," Integer)* "]"
+
+Sha256Hex ::= '"' HexChar{64} '"'
+HexChar ::= [0-9a-f]
+
+StringLiteral    ::= '"' [^"]* '"'
+NonNegativeInteger ::= "0" | [1-9] [0-9]*
+PositiveInteger  ::= [1-9] [0-9]*
+Integer          ::= "-"? NonNegativeInteger
+Number           ::= Integer ("." [0-9]+)? (("e"|"E") ("+"|"-")? [0-9]+)?

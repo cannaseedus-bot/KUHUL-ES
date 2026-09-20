@@ -1,0 +1,78 @@
+(* ========================================================
+   KXML/1 — K'UHUL XML Inference Grammar
+   Declarative forward graphs with tool-aware templates.
+   ======================================================== *)
+
+KxmlDocument ::= KxmlModel | KxmlChat | KxmlTemplate
+
+(* ========================================================
+   KXML MODEL — forward inference graph
+   ======================================================== *)
+KxmlModel ::= "{" KxmlHeader "," '"forward"' ':' ForwardGraph "}"
+
+KxmlHeader ::=
+    '"name"' ':' StringLiteral
+  | '"version"' ':' StringLiteral
+  | '"kind"' ':' '"kxml/model"'
+
+ForwardGraph ::= "[" Layer ("," Layer)* "]"
+
+Layer ::= "{" LayerField+ "}"
+
+LayerField ::=
+    '"id"' ':' StringLiteral
+  | '"op"' ':' StringLiteral
+  | '"inputs"' ':' PortList
+  | '"outputs"' ':' PortList
+  | '"params"' ':' ObjectLiteral
+  | '"weights"' ':' WeightRef
+  | '"template"' ':' StringLiteral
+
+PortList ::= "[" PortRef ("," PortRef)* "]"
+
+PortRef ::=
+    StringLiteral
+  | "{" '"id"' ':' StringLiteral "," '"shape"' ':' Shape "}"
+
+Shape ::= "[" Integer ("," Integer)* "]"
+
+WeightRef ::=
+    StringLiteral
+  | "{" '"file"' ':' StringLiteral "," '"shape"' ':' Shape "}"
+
+(* ========================================================
+   KXML CHAT — tool-aware Jinja template
+   ======================================================== *)
+KxmlChat ::= "{" ChatHeader "," '"template"' ':' StringLiteral "}"
+
+ChatHeader ::=
+    '"name"' ':' StringLiteral
+  | '"kind"' ':' '"kxml/chat"'
+  | '"tools"' ':' ToolList
+
+ToolList ::= "[" Tool ("," Tool)* "]"
+
+Tool ::= "{" ToolField+ "}"
+
+ToolField ::=
+    '"name"' ':' StringLiteral
+  | '"description"' ':' StringLiteral
+  | '"parameters"' ':' ObjectLiteral
+
+(* ========================================================
+   KXML RENDER — prompt rendering call
+   ======================================================== *)
+KxmlRender ::= "{" RenderHeader "," '"context"' ':' ObjectLiteral "}"
+
+RenderHeader ::=
+    '"name"' ':' StringLiteral
+  | '"kind"' ':' '"kxml/render"'
+  | '"template_file"' ':' StringLiteral
+
+Integer ::= [0-9]+
+ObjectLiteral ::= "{" (Property ("," Property)*)? "}"
+Property ::= StringLiteral ":" Literal
+Literal ::= StringLiteral | NumericLiteral | BooleanLiteral | "null"
+
+(* KXML invariant: forward graphs are converted to kfold/1 by the
+   KxmlModel driver; chat templates are rendered by kxml_chat. *)

@@ -42,7 +42,7 @@ const DEFAULT_RULES = [
     id: 'entropy-warning',
     when: (b) => b.proposition.startsWith('metric:entropy'),
     then: (b) => {
-      const value = parseFloat(b.proposition.split('=')[1]) || 0);
+      const value = parseFloat(b.proposition.split('=')[1]) || 0;
       if (value > 0.35) {
         return { proposition: 'warn: entropy high, consolidate before project', fold: 'Ch\'en', confidence: 0.85 };
       }

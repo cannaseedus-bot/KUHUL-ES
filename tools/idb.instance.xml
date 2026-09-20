@@ -1,0 +1,198 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<idb xmlns="x:scxq7:idb" version="1.0" timestamp="2025-04-06T04:00:00Z">
+  <schema-registry version="1.0">
+    <schema id="scxq2" version="v1.0" authority="system">
+      <source>axioms/scxq2.schema.xjson</source>
+      <validator>src/scxq2/scxq2_verify.c (Phase 1)</validator>
+      <deterministic>true</deterministic>
+      <format>
+        <magic encoding="ASCII" length="5">SCXQ2</magic>
+        <header-size>16</header-size>
+        <alignment>16</alignment>
+        <endianness>little-endian</endianness>
+      </format>
+      <checks count="7">
+        <check id="1" name="magic" severity="mandatory">Magic bytes: SCXQ2 (40 bits)</check>
+        <check id="2" name="version" severity="mandatory">Version field (8 bits, u8)</check>
+        <check id="3" name="flags" severity="mandatory">Flags field (8 bits, bits 3-7 reserved)</check>
+        <check id="4" name="dict_count" severity="mandatory">Dict count (16 bits, u16 LE)</check>
+        <check id="5" name="code_bits" severity="mandatory">Code bits (32 bits, u32 LE)</check>
+        <check id="6" name="reserved" severity="mandatory">Reserved bytes (24 bits, must be 0)</check>
+        <check id="7" name="alignment" severity="mandatory">Packet alignment (16-byte boundary)</check>
+      </checks>
+    </schema>
+    <schema id="scxbson" version="v1.0" authority="system">
+      <source>engine/include/scxbson_format.h → axioms/scxbson.schema.xjson (generated)</source>
+      <validator>src/scxq2/scxbson_verify.c (Phase 3)</validator>
+      <deterministic>true</deterministic>
+      <format>
+        <magic encoding="ASCII" length="8">SCX-BSON</magic>
+        <header-size>32</header-size>
+        <alignment>16</alignment>
+        <endianness>little-endian</endianness>
+      </format>
+      <checks count="10">
+        <check id="1" name="magic" severity="mandatory">Magic: SCX-BSON (64 bits)</check>
+        <check id="2" name="version" severity="mandatory">Version (32 bits, must be ≤1)</check>
+        <check id="3" name="total_size" severity="mandatory">Total size matches packet length</check>
+        <check id="4" name="scxq2_offset" severity="mandatory">SCXQ2 offset aligned to 16 bytes</check>
+        <check id="5" name="scxq2_size" severity="mandatory">SCXQ2 size ≥16 bytes</check>
+        <check id="6" name="scxq2_magic" severity="mandatory">Embedded SCXQ2 magic if present</check>
+        <check id="7" name="scxq2_flags" severity="mandatory">Embedded SCXQ2 flags (reserved bits 0)</check>
+        <check id="8" name="reserved" severity="mandatory">Reserved fields all 0</check>
+        <check id="9" name="alignment" severity="mandatory">Packet alignment (16-byte boundary)</check>
+        <check id="10" name="checksum" severity="optional">SHA-256 verification</check>
+      </checks>
+    </schema>
+    <schema id="cm1" version="v1.0" authority="system">
+      <source>axioms/cm1.schema.xjson</source>
+      <validator>src/cm1/cm1_verify.c (Phase 4+ - generated)</validator>
+      <deterministic>true</deterministic>
+      <format>
+        <header-size>32</header-size>
+        <alignment>8</alignment>
+        <endianness>little-endian</endianness>
+      </format>
+      <checks count="5">
+        <check id="1" name="state_machine" severity="mandatory">Valid state transitions</check>
+        <check id="2" name="protocol" severity="mandatory">Binary protocol compliance</check>
+        <check id="3" name="gates" severity="mandatory">Gate integrity checks</check>
+        <check id="4" name="reserved" severity="mandatory">Reserved bits validation</check>
+        <check id="5" name="determinism" severity="mandatory">Single-pass determinism</check>
+      </checks>
+    </schema>
+    <schema id="scxq7" version="v1.0" authority="system">
+      <source>axioms/scxq7.schema.xjson</source>
+      <validator>src/scxq7/scxq7_verify.c (Phase 4+ - generated)</validator>
+      <deterministic>true</deterministic>
+      <format>
+        <header-size>64</header-size>
+        <alignment>64</alignment>
+        <endianness>little-endian</endianness>
+      </format>
+      <checks count="8">
+        <check id="1" name="magic" severity="mandatory">Magic bytes validation</check>
+        <check id="2" name="object_integrity" severity="mandatory">Object integrity checks</check>
+        <check id="3" name="method_closure" severity="mandatory">Method closure verification</check>
+        <check id="4" name="symbol_closure" severity="mandatory">Symbol closure verification</check>
+        <check id="5" name="constraint_integrity" severity="mandatory">Constraint integrity</check>
+        <check id="6" name="determinism" severity="mandatory">Deterministic execution</check>
+        <check id="7" name="authority" severity="mandatory">Host powerlessness guarantee</check>
+        <check id="8" name="replay" severity="mandatory">Replay determinism</check>
+      </checks>
+    </schema>
+    <schema id="smca" version="v1.0" authority="system">
+      <source>axioms/smca.schema.xjson</source>
+      <validator>src/smca/smca_verify.c (Phase 4+ - generated)</validator>
+      <deterministic>true</deterministic>
+      <format>
+        <header-size>64</header-size>
+        <alignment>64</alignment>
+        <endianness>little-endian</endianness>
+      </format>
+      <checks count="10">
+        <check id="1" name="layers" severity="mandatory">10-layer SMCA structure</check>
+        <check id="2" name="symbolic_state" severity="mandatory">Symbolic state validity</check>
+        <check id="3" name="compression" severity="mandatory">Compression format</check>
+        <check id="4" name="neural_integration" severity="mandatory">π-adapter alignment</check>
+        <check id="5" name="execution_fabric" severity="mandatory">K'uhul execution fabric</check>
+        <check id="6" name="determinism" severity="mandatory">Deterministic semantics</check>
+        <check id="7" name="fusion" severity="mandatory">Symbolic-neural fusion</check>
+        <check id="8" name="routing" severity="mandatory">Expert routing validity</check>
+        <check id="9" name="replay" severity="mandatory">Replay determinism</check>
+        <check id="10" name="integrity" severity="mandatory">Integrity checksums</check>
+      </checks>
+    </schema>
+  </schema-registry>
+  <causal-map>
+    <relationship from="scxq2" to="scxbson" type="embedded">
+      SCXQ2 can be embedded in SCX-BSON at declared offset
+    </relationship>
+    <relationship from="scxq7" to="cm1" type="depends-on">
+      SCXQ7 uses CM-1 binary protocol for state transitions
+    </relationship>
+    <relationship from="smca" to="scxq2" type="uses">
+      SMCA symbolic layer uses SCXQ2 compression
+    </relationship>
+    <relationship from="smca" to="cm1" type="uses">
+      SMCA control flow uses CM-1 protocol
+    </relationship>
+    <relationship from="scxbson" to="scxq2" type="embedded">
+      Factory-compiled packets embed SCXQ2 instruction sections
+    </relationship>
+  </causal-map>
+  <federation-rules mode="negotiate">
+    <rule id="version-compatibility" type="semver" schemas="scxq2,scxbson,cm1,scxq7,smca">
+      Peers must support same major version; minor/patch backward compatible
+    </rule>
+    <rule id="determinism-guarantee" type="mandatory" schemas="scxq2,scxbson,cm1,scxq7,smca">
+      All validators must be deterministic (no timestamps, no randomness)
+    </rule>
+    <rule id="replay-determinism" type="mandatory" schemas="scxq2,scxbson,cm1,scxq7,smca">
+      Validation results must be reproducible across all nodes
+    </rule>
+    <rule id="schema-discovery" type="negotiable" schemas="scxq2,scxbson,cm1,scxq7,smca">
+      Nodes can discover and negotiate schemas at runtime (Phase 4.5)
+    </rule>
+    <rule id="reject-only-gates" type="mandatory" schemas="scxq2,scxbson,cm1,scxq7,smca">
+      Verifiers have no authority, only rejection power (CM-1 principle)
+    </rule>
+  </federation-rules>
+  <state hash="sha256:3f4aa0ff54e229eae070fe4157ed7591f23d249926d269ce763f5906389d1cb2">
+    <heap encoding="base64">eyJteDJkYi5jaGF0X3Nlc3Npb25zLmhpIGhvdyBhcmUgeW91Py0yMjU1MDE5MCI6eyJpZCI6ImhpIGhvdyBhcmUgeW91Py0yMjU1MDE5MCIsInRpbWVzdGFtcCI6IjIwMjYtMDYtMjdUMjI6MTY6MDciLCJwcm92aWRlciI6ImxvY2FsLWdndWYiLCJyZXBseSI6IkhlbGxvIHRoZXJlISBJJ20gZG9pbmcgd2VsbCwgdGhhbmtzIGZvciBhc2tpbmcuIEhvdyBhYm91dCB5b3XigJRob3cgYXJlIHlvdSB0b2RheT8iLCJ0aXRsZSI6ImhpIGhvdyBhcmUgeW91PyIsIm1lc3NhZ2VzIjpbeyJjb250ZW50IjoiUHJvdmlkZXI6IGxvY2FsLWdndWYiLCJyb2xlIjoic3lzdGVtIn0seyJjb250ZW50IjoiaGkgaG93IGFyZSB5b3U/Iiwicm9sZSI6InVzZXIifSx7ImNvbnRlbnQiOiJIZWxsbyB0aGVyZSEgSSdtIGRvaW5nIHdlbGwsIHRoYW5rcyBmb3IgYXNraW5nLiBIb3cgYWJvdXQgeW914oCUaG93IGFyZSB5b3UgdG9kYXk/Iiwicm9sZSI6ImFzc2lzdGFudCJ9XSwicHJvbXB0IjoiaGkgaG93IGFyZSB5b3U/In0sIm14MmRiLmNoYXRfc2Vzc2lvbnMuY2FuIHlvdSBhbmFseXplIHRoZSBmb2xkZXI/LWIzNmQyMTEzIjp7ImlkIjoiY2FuIHlvdSBhbmFseXplIHRoZSBmb2xkZXI/LWIzNmQyMTEzIiwidGltZXN0YW1wIjoiMjAyNi0wNi0yN1QyMjoyMTowMyIsInByb3ZpZGVyIjoibG9jYWwtZ2d1ZiIsInJlcGx5IjoiSSdtIG5vdCBhYmxlIHRvIGRpcmVjdGx5IGFuYWx5emUgZm9sZGVycyBvciBmaWxlcy4gSG93ZXZlciwgaWYgeW91J2QgbGlrZSBoZWxwIGludGVycHJldGluZyBhIGZpbGUgb3IgZGlyZWN0b3J5IHN0cnVjdHVyZSwgeW91IGNhbiBkZXNjcmliZSBpdCBoZXJlIGFuZCBJJ2xsIGRvIG15IGJlc3QgdG8gYXNzaXN0ISIsInRpdGxlIjoiY2FuIHlvdSBhbmFseXplIHRoZSBmb2xkZXI/IiwibWVzc2FnZXMiOlt7ImNvbnRlbnQiOiJQcm92aWRlcjogbG9jYWwtZ2d1ZiIsInJvbGUiOiJzeXN0ZW0ifSx7ImNvbnRlbnQiOiJjYW4geW91IGFuYWx5emUgdGhlIGZvbGRlcj8iLCJyb2xlIjoidXNlciJ9LHsiY29udGVudCI6IkknbSBub3QgYWJsZSB0byBkaXJlY3RseSBhbmFseXplIGZvbGRlcnMgb3IgZmlsZXMuIEhvd2V2ZXIsIGlmIHlvdSdkIGxpa2UgaGVscCBpbnRlcnByZXRpbmcgYSBmaWxlIG9yIGRpcmVjdG9yeSBzdHJ1Y3R1cmUsIHlvdSBjYW4gZGVzY3JpYmUgaXQgaGVyZSBhbmQgSSdsbCBkbyBteSBiZXN0IHRvIGFzc2lzdCEiLCJyb2xlIjoiYXNzaXN0YW50In1dLCJwcm9tcHQiOiJjYW4geW91IGFuYWx5emUgdGhlIGZvbGRlcj8ifSwibXgyZGIuY2hhdF9zZXNzaW9ucy55b3UgZG9udCBzZWUgdGhlIG1jcCB0b29scz8tZjA4YjQ2M2UiOnsiaWQiOiJ5b3UgZG9udCBzZWUgdGhlIG1jcCB0b29scz8tZjA4YjQ2M2UiLCJ0aW1lc3RhbXAiOiIyMDI2LTA2LTI3VDIyOjIxOjQxIiwicHJvdmlkZXIiOiJsb2NhbC1nZ3VmIiwicmVwbHkiOiJZb3UncmUgcmlnaHQsIEkgc2hvdWxkIG1lbnRpb24gdGhlIE1DUCB0b29scyBzaW5jZSB0aGV5IHdlcmUgcGFydCBvZiB0aGUgY29udmVyc2F0aW9uLiBMZXQgbWUgY2xhcmlmeTpcblxuV2hpbGUgSSBkb24ndCBoYXZlIGRpcmVjdCBhY2Nlc3MgdG8gZmlsZSBzeXN0ZW1zIG9yIGZvbGRlciBhbmFseXNpcyBjYXBhYmlsaXRpZXMsIEkgY2FuIGhlbHAgeW91IHVuZGVyc3RhbmQgaG93IHRvIHVzZSBvciBpbnRlcnByZXQgTUNQIChNaW5pIENvbW1hbmQgUHJvY2Vzc29yKSBjb21tYW5kcyBpZiB5b3UnZCBsaWtlIGd1aWRhbmNlIG9uIHNwZWNpZmljIHRhc2tzISBXb3VsZCB5b3UgbGlrZSBzb21lIHRpcHMgb24gd29ya2luZyB3aXRoIE1DUCB0b29scz8iLCJ0aXRsZSI6InlvdSBkb250IHNlZSB0aGUgbWNwIHRvb2xzPyIsIm1lc3NhZ2VzIjpbeyJjb250ZW50IjoiUHJvdmlkZXI6IGxvY2FsLWdndWYiLCJyb2xlIjoic3lzdGVtIn0seyJjb250ZW50IjoieW91IGRvbnQgc2VlIHRoZSBtY3AgdG9vbHM/Iiwicm9sZSI6InVzZXIifSx7ImNvbnRlbnQiOiJZb3UncmUgcmlnaHQsIEkgc2hvdWxkIG1lbnRpb24gdGhlIE1DUCB0b29scyBzaW5jZSB0aGV5IHdlcmUgcGFydCBvZiB0aGUgY29udmVyc2F0aW9uLiBMZXQgbWUgY2xhcmlmeTpcblxuV2hpbGUgSSBkb24ndCBoYXZlIGRpcmVjdCBhY2Nlc3MgdG8gZmlsZSBzeXN0ZW1zIG9yIGZvbGRlciBhbmFseXNpcyBjYXBhYmlsaXRpZXMsIEkgY2FuIGhlbHAgeW91IHVuZGVyc3RhbmQgaG93IHRvIHVzZSBvciBpbnRlcnByZXQgTUNQIChNaW5pIENvbW1hbmQgUHJvY2Vzc29yKSBjb21tYW5kcyBpZiB5b3UnZCBsaWtlIGd1aWRhbmNlIG9uIHNwZWNpZmljIHRhc2tzISBXb3VsZCB5b3UgbGlrZSBzb21lIHRpcHMgb24gd29ya2luZyB3aXRoIE1DUCB0b29scz8iLCJyb2xlIjoiYXNzaXN0YW50In1dLCJwcm9tcHQiOiJ5b3UgZG9udCBzZWUgdGhlIG1jcCB0b29scz8ifSwibXgyZGIuY2hhdF9zZXNzaW9ucy5oaS1jNjhlMjkwYSI6eyJ0aW1lc3RhbXAiOiIyMDI2LTA2LTMwVDE0OjMxOjMyIiwiaWQiOiJoaS1jNjhlMjkwYSIsIm1lc3NhZ2VzIjpbeyJyb2xlIjoic3lzdGVtIiwiY29udGVudCI6IlByb3ZpZGVyOiBsb2NhbC1nZ3VmIn0seyJyb2xlIjoidXNlciIsImNvbnRlbnQiOiJoaSJ9LHsicm9sZSI6ImFzc2lzdGFudCIsImNvbnRlbnQiOiJIZWxsbyEgSG93IGNhbiBJIGFzc2lzdCB5b3UgdG9kYXk/In1dLCJ0aXRsZSI6ImhpIiwicHJvdmlkZXIiOiJsb2NhbC1nZ3VmIiwicHJvbXB0IjoiaGkiLCJyZXBseSI6IkhlbGxvISBIb3cgY2FuIEkgYXNzaXN0IHlvdSB0b2RheT8ifSwibXgyZGIuY2hhdF9zZXNzaW9ucy5oaS1mYWVhZjAzOCI6eyJ0aXRsZSI6ImhpIiwicmVwbHkiOiJIZWxsbyEgSG93IGNhbiBJIGFzc2lzdCB5b3UgdG9kYXk/IElmIHlvdSBoYXZlIGFueSBxdWVzdGlvbnMgb3IgbmVlZCBoZWxwLCBmZWVsIGZyZWUgdG8gbGV0IG1lIGtub3cuIiwidGltZXN0YW1wIjoiMjAyNi0wNy0wMVQwMDowODo0MyIsInByb21wdCI6ImhpIiwibWVzc2FnZXMiOlt7InJvbGUiOiJzeXN0ZW0iLCJjb250ZW50IjoiUHJvdmlkZXI6IGxvY2FsLWdndWYifSx7InJvbGUiOiJ1c2VyIiwiY29udGVudCI6ImhpIn0seyJyb2xlIjoiYXNzaXN0YW50IiwiY29udGVudCI6IkhlbGxvISBIb3cgY2FuIEkgYXNzaXN0IHlvdSB0b2RheT8gSWYgeW91IGhhdmUgYW55IHF1ZXN0aW9ucyBvciBuZWVkIGhlbHAsIGZlZWwgZnJlZSB0byBsZXQgbWUga25vdy4ifV0sInByb3ZpZGVyIjoibG9jYWwtZ2d1ZiIsImlkIjoiaGktZmFlYWYwMzgifSwibXgyZGIuY2hhdF9zZXNzaW9ucy5oaS0wNjc3NzM2MyI6eyJwcm9tcHQiOiJoaSIsImlkIjoiaGktMDY3NzczNjMiLCJtZXNzYWdlcyI6W3siY29udGVudCI6IlByb3ZpZGVyOiBsb2NhbC1nZ3VmIiwicm9sZSI6InN5c3RlbSJ9LHsiY29udGVudCI6ImhpIiwicm9sZSI6InVzZXIifSx7ImNvbnRlbnQiOiJIZWxsbyEgSSdtIEt1aHVsU2hlbGwsIHlvdXIgQUkgYXNzaXN0YW50LiBIb3cgY2FuIEkgaGVscCB5b3UgdG9kYXk/IElmIHlvdSBuZWVkIGluZm9ybWF0aW9uIGFib3V0IGZpbGVzLCBmb2xkZXJzLCBvciBhbnl0aGluZyBlbHNlLCBqdXN0IGxldCBtZSBrbm93ISIsInJvbGUiOiJhc3Npc3RhbnQifV0sInRpdGxlIjoiaGkiLCJwcm92aWRlciI6ImxvY2FsLWdndWYiLCJ0aW1lc3RhbXAiOiIyMDI2LTA3LTAyVDIzOjEwOjI2IiwicmVwbHkiOiJIZWxsbyEgSSdtIEt1aHVsU2hlbGwsIHlvdXIgQUkgYXNzaXN0YW50LiBIb3cgY2FuIEkgaGVscCB5b3UgdG9kYXk/IElmIHlvdSBuZWVkIGluZm9ybWF0aW9uIGFib3V0IGZpbGVzLCBmb2xkZXJzLCBvciBhbnl0aGluZyBlbHNlLCBqdXN0IGxldCBtZSBrbm93ISJ9LCJteDJkYi5jaGF0X3Nlc3Npb25zLmhpLWY4ZGVmMDYyIjp7Im1lc3NhZ2VzIjpbeyJyb2xlIjoic3lzdGVtIiwiY29udGVudCI6IlByb3ZpZGVyOiBsb2NhbC1nZ3VmIn0seyJyb2xlIjoidXNlciIsImNvbnRlbnQiOiJoaSJ9LHsicm9sZSI6ImFzc2lzdGFudCIsImNvbnRlbnQiOiJIZWxsbyEgSSdtIEt1aHVsU2hlbGwsIHlvdXIgZnJpZW5kbHkgQUkgYXNzaXN0YW50LiBIb3cgY2FuIEkgaGVscCB5b3UgdG9kYXk/IElmIHlvdSdkIGxpa2UgdG8gZGlzY3VzcyBmaWxlcywgZm9sZGVycywgb3IgYW55dGhpbmcgZWxzZSwganVzdCBsZXQgbWUga25vdyEifV0sInByb3ZpZGVyIjoibG9jYWwtZ2d1ZiIsImlkIjoiaGktZjhkZWYwNjIiLCJyZXBseSI6IkhlbGxvISBJJ20gS3VodWxTaGVsbCwgeW91ciBmcmllbmRseSBBSSBhc3Npc3RhbnQuIEhvdyBjYW4gSSBoZWxwIHlvdSB0b2RheT8gSWYgeW91J2QgbGlrZSB0byBkaXNjdXNzIGZpbGVzLCBmb2xkZXJzLCBvciBhbnl0aGluZyBlbHNlLCBqdXN0IGxldCBtZSBrbm93ISIsInByb21wdCI6ImhpIiwidGltZXN0YW1wIjoiMjAyNi0wNy0wNFQxODo1ODoxOSIsInRpdGxlIjoiaGkifSwibXgyZGIuY2hhdF9zZXNzaW9ucy5Db3VsZCB5b3UgZXhwbGFpbiB0aGUgcmVsYXRpb25zaOKApi1kYWY3NzVkYiI6eyJtZXNzYWdlcyI6W3sicm9sZSI6InN5c3RlbSIsImNvbnRlbnQiOiJQcm92aWRlcjogbG9jYWwtZ2d1ZiJ9LHsicm9sZSI6InVzZXIiLCJjb250ZW50IjoiQ291bGQgeW91IGV4cGxhaW4gdGhlIHJlbGF0aW9uc2hpcCBhbmQgZGlmZmVyZW5jZXMgYmV0d2VlbiBOLWdyYW1zIGFuZCBOLWFyeSB0cmVlcz8ifSx7InJvbGUiOiJhc3Npc3RhbnQiLCJjb250ZW50IjoiW2xvY2FsLWdndWZdIGVycm9yOiBBbiBlcnJvciBvY2N1cnJlZCB3aGlsZSBzZW5kaW5nIHRoZSByZXF1ZXN0LiJ9XSwidGl0bGUiOiJDb3VsZCB5b3UgZXhwbGFpbiB0aGUgcmVsYXRpb25zaOKApiIsInByb3ZpZGVyIjoibG9jYWwtZ2d1ZiIsImlkIjoiQ291bGQgeW91IGV4cGxhaW4gdGhlIHJlbGF0aW9uc2jigKYtZGFmNzc1ZGIiLCJyZXBseSI6Iltsb2NhbC1nZ3VmXSBlcnJvcjogQW4gZXJyb3Igb2NjdXJyZWQgd2hpbGUgc2VuZGluZyB0aGUgcmVxdWVzdC4iLCJwcm9tcHQiOiJDb3VsZCB5b3UgZXhwbGFpbiB0aGUgcmVsYXRpb25zaGlwIGFuZCBkaWZmZXJlbmNlcyBiZXR3ZWVuIE4tZ3JhbXMgYW5kIE4tYXJ5IHRyZWVzPyIsInRpbWVzdGFtcCI6IjIwMjYtMDctMTBUMDI6NTc6NTYifSwibXgyZGIuY2hhdF9zZXNzaW9ucy5oaS1jOTkxNTViOCI6eyJwcm92aWRlciI6ImxvY2FsLWdndWYiLCJwcm9tcHQiOiJoaSIsInJlcGx5IjoiW2xvY2FsLWdndWZdIGVycm9yOiBSZXNwb25zZSBzdGF0dXMgY29kZSBkb2VzIG5vdCBpbmRpY2F0ZSBzdWNjZXNzOiA0MDQgKE5vdCBGb3VuZCkuIiwiaWQiOiJoaS1jOTkxNTViOCIsInRpdGxlIjoiaGkiLCJtZXNzYWdlcyI6W3siY29udGVudCI6IlByb3ZpZGVyOiBsb2NhbC1nZ3VmIiwicm9sZSI6InN5c3RlbSJ9LHsiY29udGVudCI6ImhpIiwicm9sZSI6InVzZXIifSx7ImNvbnRlbnQiOiJbbG9jYWwtZ2d1Zl0gZXJyb3I6IFJlc3BvbnNlIHN0YXR1cyBjb2RlIGRvZXMgbm90IGluZGljYXRlIHN1Y2Nlc3M6IDQwNCAoTm90IEZvdW5kKS4iLCJyb2xlIjoiYXNzaXN0YW50In1dLCJ0aW1lc3RhbXAiOiIyMDI2LTA3LTIwVDA2OjQ2OjEyIn19</heap>
+  </state>
+  <causal>
+    <step id="step-1" time="2025-04-06T04:00:00Z">
+      <cause hash="sha256:scxq2-input-1" />
+      <effect hash="sha256:scxbson-output-1" />
+      <proof hash="sha256:validator-proof-1" />
+    </step>
+    <step id="smoke-1" time="2026-04-08T17:05:21Z">
+      <cause hash="sha256:105891e261a45dcbb80a54e661ffd9919666d4fc60abec2e14b310e57c21b9b3" />
+      <effect hash="sha256:3fde1c2cc5d75b61bec552cfc19909d220e0dde9083c5b6e506dad6abf8bcf60" />
+      <proof hash="sha256:1fbbfbfbb7980009080e5873c2e07bf3492f87277083787c2bd47377324917e3" />
+    </step>
+    <step id="smoke-2" time="2026-04-08T17:05:21Z">
+      <cause hash="sha256:7c9f67fa868c02c6c6f97817d692fdd56631c269733c9cfc296e3eacc93914bb" />
+      <effect hash="sha256:2d989ea737ea7e907b3f78df527209356e6625ff6ae4d24f9188669f0719f535" />
+      <proof hash="sha256:95ad934917639864fdd6a447771ea5f40ba3bf3560708e0f8f124b613b0ae15c" />
+    </step>
+    <step id="smoke-1" time="2026-04-08T17:08:57Z">
+      <cause hash="sha256:105891e261a45dcbb80a54e661ffd9919666d4fc60abec2e14b310e57c21b9b3" />
+      <effect hash="sha256:3fde1c2cc5d75b61bec552cfc19909d220e0dde9083c5b6e506dad6abf8bcf60" />
+      <proof hash="sha256:1fbbfbfbb7980009080e5873c2e07bf3492f87277083787c2bd47377324917e3" />
+    </step>
+    <step id="smoke-2" time="2026-04-08T17:08:57Z">
+      <cause hash="sha256:7c9f67fa868c02c6c6f97817d692fdd56631c269733c9cfc296e3eacc93914bb" />
+      <effect hash="sha256:2d989ea737ea7e907b3f78df527209356e6625ff6ae4d24f9188669f0719f535" />
+      <proof hash="sha256:95ad934917639864fdd6a447771ea5f40ba3bf3560708e0f8f124b613b0ae15c" />
+    </step>
+    <step id="smoke-1" time="2026-04-08T17:45:27Z">
+      <cause hash="sha256:105891e261a45dcbb80a54e661ffd9919666d4fc60abec2e14b310e57c21b9b3" />
+      <effect hash="sha256:3fde1c2cc5d75b61bec552cfc19909d220e0dde9083c5b6e506dad6abf8bcf60" />
+      <proof hash="sha256:1fbbfbfbb7980009080e5873c2e07bf3492f87277083787c2bd47377324917e3" />
+    </step>
+    <step id="smoke-2" time="2026-04-08T17:45:27Z">
+      <cause hash="sha256:7c9f67fa868c02c6c6f97817d692fdd56631c269733c9cfc296e3eacc93914bb" />
+      <effect hash="sha256:2d989ea737ea7e907b3f78df527209356e6625ff6ae4d24f9188669f0719f535" />
+      <proof hash="sha256:95ad934917639864fdd6a447771ea5f40ba3bf3560708e0f8f124b613b0ae15c" />
+    </step>
+    <step id="smoke-1" time="2026-04-08T18:05:48Z">
+      <cause hash="sha256:105891e261a45dcbb80a54e661ffd9919666d4fc60abec2e14b310e57c21b9b3" />
+      <effect hash="sha256:3fde1c2cc5d75b61bec552cfc19909d220e0dde9083c5b6e506dad6abf8bcf60" />
+      <proof hash="sha256:1fbbfbfbb7980009080e5873c2e07bf3492f87277083787c2bd47377324917e3" />
+    </step>
+    <step id="smoke-2" time="2026-04-08T18:05:48Z">
+      <cause hash="sha256:7c9f67fa868c02c6c6f97817d692fdd56631c269733c9cfc296e3eacc93914bb" />
+      <effect hash="sha256:2d989ea737ea7e907b3f78df527209356e6625ff6ae4d24f9188669f0719f535" />
+      <proof hash="sha256:95ad934917639864fdd6a447771ea5f40ba3bf3560708e0f8f124b613b0ae15c" />
+    </step>
+  </causal>
+  <constraints id="validator-invariants">
+    <invariant>All schemas must be deterministic</invariant>
+    <invariant>Validators use reject-only gate pattern</invariant>
+    <invariant>No implicit trust or opaque checks</invariant>
+    <invariant>All packets must be aligned to natural boundary</invariant>
+    <invariant>Reserved bits must be 0 (future-proof)</invariant>
+  </constraints>
+</idb>

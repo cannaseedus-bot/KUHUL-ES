@@ -60,6 +60,20 @@ class KUHULRuntimeCore {
     this.physics = new KuhulPhysics();
     this.thinker = new KuhulThinkEngine(opts.thinkerOpts || {});
 
+    // Fold engine (lazy semantic expansion)
+    try {
+      const { FoldEngine } = require('./fold-engine');
+      this.foldEngine = new FoldEngine({ physics: this.physics, maxDepth: opts.maxFoldDepth || 32 });
+    } catch (e) {
+      try {
+        const { FoldEngine } = require('./fold');
+        this.foldEngine = new FoldEngine({ physics: this.physics, maxDepth: opts.maxFoldDepth || 32 });
+      } catch (e2) {
+        // fold module may not be available in some builds; fallback to null
+        this.foldEngine = null;
+      }
+    }
+
     this._glyphImpl = {
       Sek: this._executeSek.bind(this),
       Pop: this._executePop.bind(this),

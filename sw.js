@@ -9,8 +9,13 @@
 'use strict';
 
 import { KUHULRuntimeCore } from './runtime/src/core.mjs';
+import { ChatBridge, chatCompletionFetchHandler } from './runtime/src/chat_bridge.mjs';
 
-const CACHE_NAME = 'kuhul-es-v1.4.0';
+// Only register service-worker listeners if we are actually in a SW global scope.
+// This keeps the file safe to import in Node for syntax checking / bundling.
+const isServiceWorker = typeof self !== 'undefined' && typeof importScripts === 'function';
+
+const CACHE_NAME = 'kuhul-es-v1.6.0';
 
 // Essential assets for offline PWA + runtime.
 const PRECACHE_ASSETS = [
@@ -30,6 +35,10 @@ const PRECACHE_ASSETS = [
   './runtime/src/kxml_driver.js',
   './runtime/src/stb_reader.js',
   './runtime/src/kxml_chat.js',
+  './runtime/src/kxml_chat.mjs',
+  './runtime/src/chat_bridge.mjs',
+  './runtime/src/think.mjs',
+  './runtime/src/pattern_reasoner.mjs',
   './runtime/src/glsl_kernels.js',
   './compiler/src/parser.js',
   './compiler/src/driver-kast.js',
@@ -39,11 +48,11 @@ const PRECACHE_ASSETS = [
   './kxml/chat_template.jinja',
 ];
 
-// Try to dynamically load an optional PCRE2 WASM runtime. The SW will
-// attempt to import known module paths (local node_modules or CDN). On
-// success the module is attached to globalThis.__PCRE2__ so the pattern
-// reasoner can use the faster PCRE2 engine instead of native RegExp.
-let __PCRE2_STATUS = { ok: false, source: null };
+// Try to load an optional PCRE2 WASM runtime. ServiceWorkerGlobalScope
+// disallows dynamic import() (https://github.com/w3c/ServiceWorker/issues/1356),
+// so in the SW we skip dynamic loading and let the pattern reasoner fall back to
+// native RegExp. The UI thread can still load PCRE2 via import() in index.html.
+let __PCRE2_STATUS = { ok: false, source: null, ready: false };
 
 async function broadcastPcre2Status() {
   try {
@@ -57,123 +66,116 @@ async function broadcastPcre2Status() {
 }
 
 async function tryLoadPcre2() {
-  const candidates = [
-    './pcre2/pcre2.js',
-    './node_modules/@ofjansen/pcre2-wasm/dist/pcre2.js',
-    './node_modules/@ofjansen/pcre2-wasm/dist/libpcre2.js',
-    'https://unpkg.com/@ofjansen/pcre2-wasm@latest/dist/pcre2.js',
-    'https://unpkg.com/@ofjansen/pcre2-wasm@latest/dist/libpcre2.js',
-    'https://cdn.jsdelivr.net/npm/@ofjansen/pcre2-wasm@latest/dist/pcre2.js',
-    'https://cdn.jsdelivr.net/npm/@ofjansen/pcre2-wasm@latest/dist/libpcre2.js'
-  ];
-
-  for (const url of candidates) {
-    try {
-      const imported = await import(url);
-      if (!imported) continue;
-      const loader = imported.default || imported;
-
-      // Prefer explicit init function
-      if (typeof loader.initPcre2 === 'function') {
-        try { await loader.initPcre2(); } catch (e) { /* ignore init errors */ }
-      } else if (loader && loader.loaded && typeof loader.loaded.then === 'function') {
-        try { await loader.loaded; } catch (e) { /* ignore */ }
-      } else if (loader && loader.Module && loader.Module.loaded && typeof loader.Module.loaded.then === 'function') {
-        try { await loader.Module.loaded; } catch (e) { /* ignore */ }
-      } else if (typeof loader.onRuntimeInitialized === 'function') {
-        // some Emscripten loaders set onRuntimeInitialized
-        await new Promise((resolve) => { loader.onRuntimeInitialized = resolve; });
-      }
-
-      globalThis.__PCRE2__ = loader;
-      __PCRE2_STATUS = { ok: true, source: url, ready: true };
-      console.log('[SW] PCRE2 loaded from', url);
-      await broadcastPcre2Status();
-      return { ok: true, source: url };
-    } catch (err) {
-      console.warn('[SW] PCRE2 import failed:', url, err && err.message ? err.message : err);
-    }
-  }
-  __PCRE2_STATUS = { ok: false, source: null };
+  // Dynamic import() is not permitted inside a service worker.
+  // Keep status false and rely on native RegExp fallback.
+  console.log('[SW] PCRE2 dynamic import skipped in ServiceWorker scope; using native RegExp fallback');
+  __PCRE2_STATUS = { ok: false, source: null, ready: false };
   await broadcastPcre2Status();
   return { ok: false };
 }
 
 // ── Lifecycle ──────────────────────────────────────────────────────────────
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    try {
-      await cache.addAll(PRECACHE_ASSETS);
-    } catch (e) {
-      console.warn('[SW] precache failed:', e && e.message ? e.message : e);
+if (isServiceWorker) {
+  self.addEventListener('install', (event) => {
+    self.skipWaiting();
+    event.waitUntil((async () => {
+      const cache = await caches.open(CACHE_NAME);
+      try {
+        await cache.addAll(PRECACHE_ASSETS);
+      } catch (e) {
+        console.warn('[SW] precache failed:', e && e.message ? e.message : e);
+      }
+      // Attempt to pre-load PCRE2 if available (optional).
+      try {
+        await tryLoadPcre2();
+      } catch (e) {
+        console.warn('[SW] tryLoadPcre2 failed:', e && e.message ? e.message : e);
+      }
+    })());
+  });
+
+  self.addEventListener('activate', (event) => {
+    event.waitUntil(
+      caches.keys().then((keys) =>
+        Promise.all(
+          keys
+            .filter((key) => key.startsWith('kuhul-es-') && key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
+      ).then(() => self.clients.claim())
+    );
+  });
+
+  // ── Fetch handler: chat completions are handled by the semantic bridge ─────
+  const chatBridge = new ChatBridge({ timeoutMs: 500 });
+
+  self.addEventListener('fetch', (event) => {
+    const { request } = event;
+    const url = new URL(request.url);
+
+    // Intercept OpenAI-style chat completion requests locally.
+    if (request.method === 'POST' && url.pathname === '/v1/chat/completions') {
+      chatCompletionFetchHandler(event, chatBridge);
+      return;
     }
-    // Attempt to pre-load PCRE2 if available (optional).
-    try {
-      await tryLoadPcre2();
-    } catch (e) {
-      console.warn('[SW] tryLoadPcre2 failed:', e && e.message ? e.message : e);
-    }
-  })());
-});
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys
-          .filter((key) => key.startsWith('kuhul-es-') && key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      )
-    ).then(() => self.clients.claim())
-  );
-});
+    // Otherwise cache-first with network fallback + cache update.
+    if (request.method !== 'GET') return;
 
-// ── Fetch handler: cache-first with network fallback + cache update ───────
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
+    event.respondWith(
+      caches.match(request).then((cached) => {
+        if (cached) return cached;
 
-  // Skip non-GET and opaque/telemetry requests
-  if (request.method !== 'GET') return;
-
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type === 'opaque') {
+        return fetch(request)
+          .then((response) => {
+            if (!response || response.status !== 200 || response.type === 'opaque') {
+              return response;
+            }
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
             return response;
-          }
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => {
-          // Last-ditch offline fallback
-          if (request.destination === 'document') {
-            return caches.match('./index.html');
-          }
-          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
-        });
-    })
-  );
-});
+          })
+          .catch(() => {
+            // Last-ditch offline fallback
+            if (request.destination === 'document') {
+              return caches.match('./index.html');
+            }
+            return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+          });
+      })
+    );
+  });
 
-// ── Message channel: run KUHUL-ES code inside the worker ────────────────────
-self.addEventListener('message', async (event) => {
-  const { type, payload, id } = event.data || {};
+  // ── Message channel: run KUHUL-ES code inside the worker ────────────────────
+  self.addEventListener('message', async (event) => {
+    const { type, payload, id, ok, source, ready, fromPage } = event.data || {};
 
-  // Health query for PCRE2 availability
-  if (type === 'PCRE2_QUERY') {
-    try {
-      event.source.postMessage({ type: 'PCRE2_STATUS', ok: __PCRE2_STATUS.ok, source: __PCRE2_STATUS.source });
-    } catch (e) { /* ignore */ }
-    return;
-  }
+    // Health query for PCRE2 availability
+    if (type === 'PCRE2_QUERY') {
+      try {
+        event.source.postMessage({ type: 'PCRE2_STATUS', ok: __PCRE2_STATUS.ok, source: __PCRE2_STATUS.source, ready: __PCRE2_STATUS.ready });
+      } catch (e) { /* ignore */ }
+      return;
+    }
 
-  if (type !== 'KUHUL_EXECUTE') return;
+    // Page reports that it loaded PCRE2. Store status and re-broadcast to clients.
+    if (type === 'PCRE2_STATUS' && fromPage) {
+      __PCRE2_STATUS = { ok: !!ok, source: source || null, ready: !!ready };
+      try {
+        await broadcastPcre2Status();
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (type === 'KUHUL_SET_TOOLS') {
+      chatBridge.setTools(payload.tools || []);
+      try {
+        event.source.postMessage({ type: 'KUHUL_TOOLS_SET', id });
+      } catch (e) { /* ignore */ }
+      return;
+    }
+
+    if (type !== 'KUHUL_EXECUTE') return;
 
   const rt = new KUHULRuntimeCore({ delayMs: 0 });
   let error = null;
@@ -197,3 +199,4 @@ self.addEventListener('message', async (event) => {
     error,
   });
 });
+} // end isServiceWorker guard

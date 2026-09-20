@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "@kind": "rag-config/1",
+  "title": "RAG Config — vector database, retriever, and generator",
+  "description": "Configuration for a Retrieval-Augmented Generation system. Retriever maps to Pop fold (observe/retrieve), generator maps to Xul fold (emit). Dense retriever weights can be stored as XSHARD F32 shards. Generator is a pointer to an existing atomic.manifest.json model entry.",
+  "type": "object",
+  "properties": {
+    "vector_database": {
+      "type": "object",
+      "required": ["type", "dimension"],
+      "properties": {
+        "type":        { "type": "string", "enum": ["FAISS", "Chroma", "Qdrant", "Weaviate", "kuhul_vec"] },
+        "index_type":  { "type": "string" },
+        "dimension":   { "type": "integer" },
+        "num_vectors": { "type": "integer" },
+        "metric":      { "type": "string", "enum": ["cosine", "l2", "inner_product"] },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "embeddings_model": {
+      "type": "object",
+      "required": ["type", "dimension"],
+      "properties": {
+        "type":           { "type": "string" },
+        "dimension":      { "type": "integer" },
+        "normalized":     { "type": "boolean" },
+        "model_path":     { "type": "string" },
+        "xshard_path":    { "type": "string", "description": "Path to .xshard if embeddings model is XSHARD-sharded" },
+        "fold":           { "type": "string", "enum": ["Pop"], "default": "Pop", "description": "Embeddings = observe phase" },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "index_partitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["partition", "num_vectors"],
+        "properties": {
+          "partition":   { "type": "string" },
+          "num_vectors": { "type": "integer" },
+          "shard_path":  { "type": "string" },
+          "phase": { "type": "array", "items": { "type": "integer" } }
+        }
+      }
+    },
+    "retrieval_scores": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "query":       { "type": "string" },
+          "top_1_score": { "type": "number" },
+          "top_5_scores":{ "type": "array", "items": { "type": "number" } },
+          "phase": { "type": "array", "items": { "type": "integer" } }
+        }
+      }
+    },
+    "retriever_weights": {
+      "type": "object",
+      "properties": {
+        "dense_retriever":  { "type": "number", "minimum": 0, "maximum": 1 },
+        "sparse_retriever": { "type": "number", "minimum": 0, "maximum": 1 },
+        "hybrid_fusion":    { "type": "string", "enum": ["reciprocal_rank", "linear", "learned"] },
+        "xshard_path":      { "type": "string", "description": "XSHARD path for learned retriever weights" },
+        "fold":             { "type": "string", "enum": ["Sek"], "default": "Sek", "description": "Retriever = execute phase" },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    },
+    "generator": {
+      "type": "object",
+      "required": ["model"],
+      "properties": {
+        "model":               { "type": "string", "description": "Model ID — matches atomic.manifest.json .model.id" },
+        "max_context_chunks":  { "type": "integer" },
+        "max_context_tokens":  { "type": "integer" },
+        "temperature":         { "type": "number" },
+        "fold":                { "type": "string", "enum": ["Xul"], "default": "Xul", "description": "Generator = emit phase" },
+        "micronaut":           { "type": "string", "description": "Micronaut ID to route generation through" },
+        "phase": { "type": "array", "items": { "type": "integer" } }
+      }
+    }
+  }
+}

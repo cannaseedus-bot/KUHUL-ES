@@ -89,6 +89,65 @@ main();
   <script type="module">
     import { KUHULRuntime } from './runtime/src/browser.js';
 
+    async function loadPcre2() {
+      const candidates = [
+        './pcre2/pcre2.js',
+        './node_modules/@ofjansen/pcre2-wasm/dist/pcre2.js',
+        './node_modules/@ofjansen/pcre2-wasm/dist/libpcre2.js',
+        'https://unpkg.com/@ofjansen/pcre2-wasm@latest/dist/pcre2.js',
+        'https://unpkg.com/@ofjansen/pcre2-wasm@latest/dist/libpcre2.js',
+        'https://cdn.jsdelivr.net/npm/@ofjansen/pcre2-wasm@latest/dist/pcre2.js',
+        'https://cdn.jsdelivr.net/npm/@ofjansen/pcre2-wasm@latest/dist/libpcre2.js'
+      ];
+      for (const url of candidates) {
+        try {
+          const imported = await import(url);
+          const loader = imported.default || imported;
+          if (typeof loader.initPcre2 === 'function') {
+            try { await loader.initPcre2(); } catch (e) { /* ignore */ }
+          } else if (loader && loader.loaded && typeof loader.loaded.then === 'function') {
+            try { await loader.loaded; } catch (e) { /* ignore */ }
+          } else if (loader && loader.Module && loader.Module.loaded && typeof loader.Module.loaded.then === 'function') {
+            try { await loader.Module.loaded; } catch (e) { /* ignore */ }
+          } else if (typeof loader.onRuntimeInitialized === 'function') {
+            await new Promise((resolve) => { loader.onRuntimeInitialized = resolve; });
+          }
+          window.__PCRE2__ = loader;
+          return { ok: true, source: url };
+        } catch (err) {
+          console.warn('[index] PCRE2 import failed:', url, err && err.message ? err.message : err);
+        }
+      }
+      return { ok: false };
+    }
+
+    function broadcastPcre2ToSw(status) {
+      try {
+        if (navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage({
+            type: 'PCRE2_STATUS',
+            ok: status.ok,
+            source: status.source,
+            ready: status.ok,
+            fromPage: true,
+          });
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    // Load PCRE2 in the main thread and reflect status to the service worker.
+    loadPcre2().then((status) => {
+      const p = document.getElementById('pcre2-status');
+      if (status.ok) {
+        p.textContent = 'PCRE2: ready (' + status.source + ')';
+        p.className = 'status sw-offline';
+      } else {
+        p.textContent = 'PCRE2: not available — native RegExp fallback';
+        p.className = 'status sw-online';
+      }
+      broadcastPcre2ToSw(status);
+    });
+
     const source = document.getElementById('source');
     const output = document.getElementById('output');
     const meta = document.getElementById('meta');

@@ -1,0 +1,82 @@
+(* ========================================================
+   KFOLD/1 — Lazy Semantic Fold Graph Grammar
+   A fold is a vertical phase slice; nodes are laid out in lanes.
+   ======================================================== *)
+
+KfoldDocument ::= "{" KfoldHeader ("," KfoldField)* "}"
+
+KfoldHeader ::=
+    '"protocol"' ':' '"kfold/1"'
+  | '"version"' ':' StringLiteral
+  | '"semantic_hash"' ':' StringLiteral
+  | '"source_kind"' ':' StringLiteral
+  | '"entry_fold"' ':' StringLiteral
+
+KfoldField ::=
+    '"folds"' ':' FoldList
+  | '"unfolds"' ':' UnfoldList
+  | '"config"' ':' ObjectLiteral
+
+FoldList ::= "[" Fold ("," Fold)* "]"
+
+Fold ::= "{" FoldField+ "}"
+
+FoldField ::=
+    '"id"' ':' StringLiteral
+  | '"phase"' ':' PhaseName
+  | '"axis"' ':' StringLiteral
+  | '"state"' ':' StringLiteral
+  | '"depth"' ':' Integer
+  | '"parent"' ':' (StringLiteral | "null")
+  | '"nodes"' ':' NodeList
+  | '"latent"' ':' BooleanLiteral
+  | '"collapsed"' ':' BooleanLiteral
+
+NodeList ::= "[" KfoldNode ("," KfoldNode)* "]"
+
+KfoldNode ::= "{" NodeField+ "}"
+
+NodeField ::=
+    '"id"' ':' StringLiteral
+  | '"index"' ':' Integer
+  | '"lane"' ':' Integer
+  | '"glyph"' ':' GlyphName
+  | '"opcode"' ':' StringLiteral
+  | '"symbol"' ':' StringLiteral
+  | '"operands"' ':' OperandRefList
+  | '"value"' ':' Literal
+  | '"admitted"' ':' BooleanLiteral
+
+OperandRefList ::= "[" OperandRef ("," OperandRef)* "]"
+
+OperandRef ::=
+    StringLiteral
+  | "{" '"node"' ':' StringLiteral "}"
+  | "{" '"fold"' ':' StringLiteral "}"
+
+UnfoldList ::= "[" Unfold ("," Unfold)* "]"
+
+Unfold ::= "{" UnfoldField+ "}"
+
+UnfoldField ::=
+    '"from"' ':' StringLiteral
+  | '"to"' ':' StringLiteral
+  | '"kind"' ':' UnfoldKind
+  | '"condition"' ':' Expression
+  | '"guard"' ':' StringLiteral
+
+UnfoldKind ::=
+    '"sequence"'
+  | '"branch"'
+  | '"loop"'
+  | '"latent"'
+  | '"admission"'
+
+PhaseName ::=
+    '"Pop"' | '"Wo"' | '"Yax"' | '"Sek"' | "'Ch'en'" | '"Xul"' | '"Noj"'
+GlyphName ::= PhaseName
+
+Literal ::= StringLiteral | NumericLiteral | BooleanLiteral | "null"
+ObjectLiteral ::= "{" (Property ("," Property)*)? "}"
+Property ::= StringLiteral ":" Literal
+Expression ::= StringLiteral

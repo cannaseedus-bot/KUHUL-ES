@@ -1,0 +1,273 @@
+(* ========================================================
+   K'UHUL π CANONICAL GRAMMAR v2.0
+   ECMAScript syntax · K'UHUL semantics
+   ======================================================== *)
+
+GrammarVersion ::= "KUHUL_PI_GRAMMAR" "v2.0"
+GrammarStatus  ::= "CANONICAL" | "FROZEN"
+
+(* ========================================================
+   1. ARCHITECTURAL BOUNDARY (LOCKED)
+   ======================================================== *)
+Architecture ::= MicronautDomain "→" KuhulDomain
+               | MicronautDomain "→" ExtrapolationSystem
+
+MicronautDomain ::= OrchestrationLayer
+KuhulDomain     ::= EnforcementLayer
+ExtrapolationSystem ::= NarrativeExpansion
+
+(* ========================================================
+   2. DOMAIN DEFINITIONS
+   ======================================================== *)
+OrchestrationLayer ::= "MICRONAUT" "{" ContextOrchestration "}"
+EnforcementLayer   ::= "KUHUL_π"   "{" LawEnforcement "}"
+NarrativeExpansion ::= "EXTRAPOLATOR" "{" ExtrapolationLaw "}"
+
+ContextOrchestration ::=
+      "SELECT"  FieldPresentation
+    | "ARRANGE" CollapseTiming
+    | "CHOOSE"  FieldSelection
+    | "MANAGE"  HostReality
+
+LawEnforcement ::=
+      "DEFINE"   ExecutionDefinition
+    | "ENFORCE"  Invariant
+    | "REJECT"   IllegalState
+    | "COLLAPSE" ToLaw
+
+ExtrapolationLaw ::=
+      "EXPAND" ProjectionSpace
+    | "ASSERT" ExtrapolationInvariant
+
+ProjectionSpace ::=
+      "metaphor" | "analogy" | "framing" | "discipline"
+    | "perspective" | "caveat" | "philosophy"
+
+ExtrapolationInvariant ::=
+      "'read_only_collapse_result'"
+    | "'non_authoritative_output'"
+    | "'no_contradiction'"
+    | "'infinite_extrapolation_allowed'"
+    | "'finite_execution_enforced'"
+
+(* ========================================================
+   3. ECMASCRIPT SURFACE SYNTAX
+   ======================================================== *)
+KuhulProgram ::= StatementList | BlockProgram
+
+StatementList ::= ( Statement ";"? )*
+
+Statement ::=
+      PiBinding
+    | TauBinding
+    | FunctionDeclaration
+    | GlyphCallStatement
+    | KxmlStatement
+    | BlockStatement
+    | ExpressionStatement
+    | ReturnStatement
+
+(* ========================================================
+   4. ATOMIC BLOCK SYNTAX (C@@L / KHL / ROM STYLE)
+   ======================================================== *)
+BlockProgram ::= Block+
+
+BlockStatement ::= Block
+
+Block ::= BlockHeader BlockBody BlockFooter
+
+BlockHeader ::= "[" GlyphName (Identifier | StringLiteral)? "]"
+
+BlockBody ::=
+      ( BlockLine "→"? )*
+    | "⟁" Identifier "⟁" BlockBody "⟁ Xul ⟁"
+
+BlockLine ::=
+      GlyphChain
+    | LoopBlock
+    | IfBlock
+    | DispatchBlock
+    | AssignmentLine
+    | Expression
+
+GlyphChain ::= GlyphStep ( "→" GlyphStep )*
+
+GlyphStep ::=
+      "[" GlyphName Expression "]"
+    | "[Wo" Expression "]"→"[Ch'en" Identifier "]"
+    | "[Yax" Expression "]"→"[Sek" Expression "]"
+
+LoopBlock ::= "[@loop" Expression "]"→"[" BlockBody "]"
+
+IfBlock ::= "[@if" Expression "]"→"[@then" BlockBody "]"→"[@else" BlockBody "]"
+
+DispatchBlock ::= "[@dispatch" Expression "]"→"[" CaseClause* "]"
+
+CaseClause ::= "→" "[@case" (StringLiteral | Identifier) "]"→"[" BlockBody "]"
+
+AssignmentLine ::=
+    "[Wo" Expression "]"→"[Yax" Identifier (Identifier)? "]"→"[Sek" Identifier "]"
+
+BlockFooter ::= "[Xul]"
+
+(* ========================================================
+   5. BINDINGS
+   ======================================================== *)
+PiBinding ::= "pi" Identifier "=" Expression
+TauBinding ::= "tau" Identifier "=" Expression
+
+(* pi  = immutable binding / law
+   tau = temporal binding / history-aware mutable state *)
+
+(* ========================================================
+   6. FUNCTIONS
+   ======================================================== *)
+FunctionDeclaration ::= "function" "*" Identifier "(" ParameterList ")" "{" FunctionBody "}"
+ParameterList ::= Identifier ("," Identifier)*
+FunctionBody ::= ( GlyphYield | Statement )*
+
+GlyphYield ::= "yield" "*" GlyphCall ";"?
+
+(* ========================================================
+   7. PHASE GLYPHS
+   ======================================================== *)
+GlyphCall ::= GlyphName "(" ArgumentList ")"
+
+GlyphName ::=
+      "Pop"
+    | "Wo"
+    | "Yax"
+    | "Sek"
+    | "Ch'en"
+    | "Xul"
+    | "Noj"
+
+ArgumentList ::= Expression ("," Expression)*
+
+(* Pop   — perceive / input
+   Wo    — represent / build / bind
+   Yax   — plan / condition / intention
+   Sek   — execute / compute / act
+   Ch'en — project / output
+   Xul   — consolidate / collapse
+   Noj   — controlled reflection / bounded reasoning *)
+
+GlyphCallStatement ::= GlyphCall ";"?
+
+(* ========================================================
+   8. KXML INTEROPERABILITY
+   ======================================================== *)
+KxmlStatement ::=
+      "kxml" "run" StringLiteral (KxmlOptions)?
+    | "kxml" "chat" StringLiteral "with" KxmlContext
+    | "kxml" "render" StringLiteral "using" StringLiteral
+
+KxmlOptions ::= "{" (KxmlOption ("," KxmlOption)*) "}"
+KxmlOption ::= Identifier ":" Expression
+
+KxmlContext ::= "{" (KeyValuePair ("," KeyValuePair)*) "}"
+KeyValuePair ::= Identifier ":" Expression
+
+(* ========================================================
+   9. EXPRESSIONS
+   ======================================================== *)
+Expression ::=
+      Literal
+    | Identifier
+    | GlyphCall
+    | ObjectLiteral
+    | ArrayLiteral
+    | BinaryExpression
+    | UnaryExpression
+    | ParenthesizedExpression
+
+Literal ::=
+      NumericLiteral
+    | StringLiteral
+    | BooleanLiteral
+    | "null"
+
+ObjectLiteral ::= "{" (Property ("," Property)*)? "}"
+Property ::= Identifier ":" Expression
+
+ArrayLiteral ::= "[" (Expression ("," Expression)*)? "]"
+
+BinaryExpression ::= Expression Operator Expression
+Operator ::= "+" | "-" | "*" | "/" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "&&" | "||"
+
+UnaryExpression ::= ("!" | "-" | "+") Expression
+ParenthesizedExpression ::= "(" Expression ")"
+
+(* ========================================================
+   10. COMPRESSION / KAST (SCXQ2)
+   ======================================================== *)
+CompressionLaw ::=
+      Expression "↻" "'scxq2'"
+    | "compress_as_law" "(" Expression ")"
+
+(* Rule: If compression fails → state was never executable.
+   Implementation: runtime/src/scxq2.js provides compress/decompress. *)
+
+(* ========================================================
+   11. ILLEGAL STATES
+   ======================================================== *)
+IllegalStatePrevention ::=
+      "unreachable_state" "(" ")"
+    | "violation" "(" InvariantName ")"
+
+InvariantName ::=
+      "'collapse_only'"
+    | "'field_perception'"
+    | "'compression_law'"
+    | "'unreachable_states'"
+
+(* ========================================================
+   12. EXECUTION PIPELINE
+   ======================================================== *)
+ExecutionPipeline ::=
+    "perceive_as_field" "(" "curvature_only" ")" "→"
+    "extract_executable_curvature" "→"
+    "collapse_to_law" "→"
+    "output"
+
+(* ========================================================
+   13. PROOF CONSTRUCTS
+   ======================================================== *)
+ProofDeclaration ::= "proof." ProofName ProofDefinition
+ProofName ::= "collapse_only" | "one_outcome" | "separation"
+ProofDefinition ::= "{" ProofContent "}"
+ProofContent ::= "proof_content"
+
+(* ========================================================
+   14. CONTROL FLOW (ABSENT BY LAW IN K'UHUL CORE)
+   ======================================================== *)
+(* NO IF inside pure K'UHUL law.
+   NO LOOPS inside pure K'UHUL law.
+   NO BRANCHING inside pure K'UHUL law.
+   NO PARALLELISM inside pure K'UHUL law.
+   NO MUTATION of pi-bound law.
+   Branching and iteration are permitted in the ECMAScript orchestration
+   layer (Micronaut), not in K'UHUL enforcement. *)
+
+(* ========================================================
+   15. COMMENTS
+   ======================================================== *)
+Comment ::= "(*" .* "*)" | "#" .* | "//" .* | "/*" .* "*/"
+
+(* ========================================================
+   16. CANONICAL STATEMENTS
+   ======================================================== *)
+CanonicalStatement ::=
+    "Micronaut orchestrates contexts."
+    "KUHUL π enforces law."
+    "Extrapolator expands without altering outcomes."
+    "They are orthogonal."
+    "The boundary is permanent."
+    "No further refinement possible."
+
+(* ========================================================
+   FINAL LOCK
+   ======================================================== *)
+(* This grammar is deterministic, replay-identical,
+   enforcement-only, Micronaut-safe, and Ramble-compatible.
+   Extensions that cross the locked boundaries contradict the proof. *)

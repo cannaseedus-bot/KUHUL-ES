@@ -161,6 +161,19 @@ class SemanticPatternReasoner {
     return results;
   }
 
+  // Convenience: test a single proposition against a raw regex.
+  async test(proposition, pattern, flags = '') {
+    try {
+      const matcher = await withTimeout(() => compilePattern(pattern, flags), 200)();
+      if (!matcher) return false;
+      const m = await withTimeout(() => matcher.exec(proposition), this.timeoutMs)();
+      matcher.destroy();
+      return !!m;
+    } catch {
+      return false;
+    }
+  }
+
   // Batch reason over an array of propositions.
   async reasonAll(propositions) {
     const out = [];

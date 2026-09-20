@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "@kind": "expert-role/1",
+  "title": "Expert Role — kuhul micronaut expert pool entry",
+  "description": "Describes one expert in a micronaut pool. Matches the runtime_expert adapter format used in atomic.manifest.json (programs, fold_chat, coder adapters). Fields weight/confidence/relevance seed the D3D11 MicronAutGPU struct for dispatch_micronaut_admission.",
+  "type": "object",
+  "required": ["expert_id", "specialization", "kind", "domain"],
+  "properties": {
+    "expert_id": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Zero-based index into the micronaut GPU pool (MicronAutGPU.capability)"
+    },
+    "specialization": {
+      "type": "string",
+      "description": "Human-readable expert role, e.g. 'code_generation', 'factual_retrieval'"
+    },
+    "kind": {
+      "type": "string",
+      "enum": ["runtime_expert", "domain_expert", "tool_expert", "code_expert", "moe_expert"],
+      "default": "runtime_expert",
+      "description": "Adapter kind. runtime_expert = portable, not bound to a specific runtime"
+    },
+    "portable": {
+      "type": "boolean",
+      "default": true,
+      "description": "If true, expert loads onto any compatible carrier model"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Free-text domain scope, e.g. 'programs — stdlib verbs, op dispatch, phase law'"
+    },
+    "note": {
+      "type": "string",
+      "description": "Optional deployment note (matches atomic.manifest.json .adapters[*].note)"
+    },
+
+    "path": {
+      "type": "string",
+      "description": "Path to LoRA .safetensors or full-weight checkpoint. Matches atomic.manifest.json .adapters[*].path"
+    },
+    "rank": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "LoRA rank. Matches atomic.manifest.json .adapters[*].rank"
+    },
+    "steps": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Training steps completed. Matches atomic.manifest.json .adapters[*].steps"
+    },
+    "best_loss": {
+      "type": ["number", "null"],
+      "description": "Best training loss seen"
+    },
+    "data": {
+      "type": "string",
+      "description": "Training data path (JSONL). Matches atomic.manifest.json .adapters[*].data"
+    },
+    "training": {
+      "type": "string",
+      "description": "Training quality label, e.g. 'finetooth combed'. Matches atomic.manifest.json .adapters[*].training"
+    },
+    "applies_to": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "File extensions this expert handles, e.g. [\".kuhul\", \".khl\"]"
+    },
+
+    "weight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Initial GPU pool weight (load_balance from MoE). Seeds MicronAutGPU.weight"
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Router confidence for this expert. Seeds MicronAutGPU.confidence"
+    },
+    "relevance": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Importance-score normalized to [0,1]. Seeds MicronAutGPU.relevance"
+    },
+    "phase": {
+      "type": "array",
+      "items": { "type": "integer", "enum": [0, 1] },
+      "minItems": 8,
+      "maxItems": 16,
+      "description": "Binary phase activation pattern (aligns with K'UHUL fold phase encoding)"
+    },
+    "load_balance": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction of tokens routed to this expert (from MoE load_balancing_stats)"
+    },
+    "capabilities": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Named capability tokens, e.g. ['code_gen', 'debug', 'refactor']"
+    },
+    "routing_weight": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Top-k gating network output weight for this expert"
+    }
+  },
+  "examples": [
+    {
+      "expert_id": 2,
+      "specialization": "code_generation",
+      "kind": "runtime_expert",
+      "portable": true,
+      "domain": "code generation — KSON AST, grammar, micronaut-coder tools",
+      "path": "models/from_zero/programs_lora.safetensors",
+      "rank": 8,
+      "steps": 42,
+      "data": "tools/programs_verbs.jsonl",
+      "training": "finetooth combed",
+      "note": "runtime-agnostic expertise; loads onto any compatible carrier model",
+      "weight": 0.18,
+      "confidence": 0.94,
+      "relevance": 1.00,
+      "load_balance": 0.18,
+      "phase": [1, 1, 0, 0, 1, 1, 0, 0]
+    }
+  ]
+}

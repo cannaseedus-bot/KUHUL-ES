@@ -21,7 +21,7 @@
 
 9. **Documented CLI command `kuhul-es kxml run` not implemented** — and no KXML runtime in the package. **Fixed**: implemented `kxml` CLI + JavaScript KXML inference driver (`KxmlModel`), STB reader, Jinja chat template renderer, and bundled KXML assets (`kxml/`). Models map to K'UHUL folds/nodes at runtime.
 
-9. **TypeScript sources are out of sync** with the shipped `.js` files and do not compile without a `tsconfig.json`.
+9. **TypeScript sources are out of sync** with the shipped `.js` files and do not compile without a `tsconfig.json`. **Partially fixed**: `runtime/src/fold-engine.ts` is now the canonical TypeScript source for the fold engine and compiles to CJS/ESM via `npm run build:fold`. Compiler TypeScript sources (`compiler/src/parser.ts`, `compiler/src/driver-kast.ts`) remain stale relative to their `.js` equivalents and still fail `tsc` due to top-level `import` placement and missing declarations.
 
 10. **No error reporting with line numbers** for runtime parse/execute failures.
 
@@ -32,6 +32,20 @@
   - Thoughts are KAST-like nodes with `fold`, `opcode: 'INFERE'`, and SHA-256 hashes.
   - Supports controlled rule/belief learning and reflection.
   - Integrated with `KuhulPhysics.reflect()` phase hook.
+
+- **Fold engine (TypeScript reference)** (`runtime/src/fold-engine.ts`):
+  - Vertical fold / linear node geometry matching `kfold/1` schema (`schemas/kfold-1.json`).
+  - Explicit phases: `compressed → expanding → expanded → collapsing → collapsed`.
+  - Async latent functions, parent pointers, deterministic depth, EventEmitter events.
+  - `toJSON()` emits `kfold/1`; `toKast()` maps the same graph to `kast/1`.
+  - Compiled to CommonJS and ESM via `npm run build:fold`; consumed by `core.js` and `core.mjs`.
+
+- **Token/embedding LM training** (`runtime/src/trainer.js`, `runtime/src/tokenizer.js`, `runtime/src/text_dataset.js`):
+  - GLSL trainer supports `vocabSize` + `embedDim` token mode.
+  - Embedding lookup, layer norm, GELU FFN, LM head, stable softmax cross-entropy.
+  - Sparse embedding gradients, greedy/top-k `generate()`.
+  - Char-level tokenizer fallback when `@huggingface/tokenizers` is not installed.
+  - Exported KAST manifest references external `model-weights/*.bin` artifacts and includes tokenizer metadata.
 
 - **CLI execution** now actually runs code and emits:
   - deterministic hash chain
@@ -71,11 +85,13 @@
   - `kuhul-es kxml` — model forward, generation, chat, KAST trace export
   - `kuhul-es gpu` — GLSL probe
   - `kuhul-es train --semantic` — live semantic advisor
+  - `kuhul-es train <text.json> --out model.kson` — token-mode embedding LM
 
 - **AST-based runtime parser** (`runtime/src/runtime_parser.js`, `runtime/src/expression_evaluator.js`) replaces fragile regex parsing.
 - **Semantic training advisor** integrated into `GLSLTrainer.train()`; advice dynamically adjusts LR, pressure, and attention.
 
 - **Package metadata** cleaned up (`package.json`, `README.md`).
+- **Build step** added: `npm run build:fold` compiles the TypeScript FoldEngine to CJS/ESM.
 
 # Similar Ideas to Improve Semantics
 
@@ -94,3 +110,60 @@
 7. **Contract-Aware Compiler** — make `--driver` derive not just capabilities but actual resource bounds from static analysis of the source (loop counts, tensor shapes, buffer sizes).
 
 8. **GLSL transport fallback** — the trainer already has a transport abstraction; wire it into `kuhul-es gpu` so the CLI can probe and report backend availability.
+
+---
+
+# Latest Updates (2026-08-10)
+
+- **Causal self-attention in GLSLTrainer** (runtime/src/attention.js, runtime/src/trainer.js):
+  - Adds optional nHead/headDim attention to token-mode skeletons.
+  - Forward/backward through multi-head causal self-attention.
+  - New test: test/trainer_attention.test.js.
+
+- **KXML -> kfold/1 mapping** (runtime/src/kxml_driver.js):
+  - KxmlModel.toKast() now emits a kfold/1 graph with vertical folds, linear nodes, operands, and control unfolds.
+  - New test: test/kxml_folds.test.js.
+
+- **Browser / API chat bridge** (runtime/src/chat_bridge.js + .mjs, sw.js):
+  - ChatBridge routes OpenAI-style chat.completions through the local semantic engine.
+  - KXML/Jinja prompt rendering and tool-aware response generation.
+  - Service worker intercepts POST /v1/chat/completions for offline chat.
+  - New test: test/chat_bridge.test.js.
+
+- **KUHUL-E domain response engine** (runtime/src/kuhul-e.js + .mjs, runtime/src/domain-stack.js, runtime/src/response-pattern.js):
+  - Stack-specific domains, pattern matching, attention-weighted research hooks, fold-based response expansion, and feedback-driven learning.
+  - Exports kfold/1 graphs via toKast() and round-trips knowledge with exportKnowledge() / importKnowledge().
+  - New example: examples/kuhul-e-demo.js; new test: test/kuhul-e.test.js.
+
+- **Backend transports** (runtime/src/transports/):
+  - powernautGlslTransport maps KUHUL-ES kernels to the Powernaut GLSL Object Server opcodes (WO_DENSE, WO_RMS_NORM, WO_SOFTMAX, WO_GEGLU, etc.) and builds its /dispatch / /chain JSON envelope.
+  - xvmD3d12Transport stubs shell-out access to the XVM D3D12 native stack. Compatible XVM D3D12 binaries are copied into bin/xvm-d3d12/ and archived into bin/bin.zip for npm.
+  - kuhul-es gpu and kuhul-es train accept --backend powernaut-glsl|xvm-d3d12|glsl plus --backend-endpoint / --backend-manifest.
+  - New test: test/transports.test.js; uses an in-process mock GLSL server so the suite stays self-contained. A compatible GLSL_Server.exe binary, server.glsl.json manifest, neural_layer.glsl shader, and XVM D3D12 binaries are copied into bin/ for local use. For npm publishing the raw .exe/.dll files are packed into bin/bin.zip and excluded from the tarball via bin/.npmignore; users run `npm run extract-bin` to restore them.
+
+- **Unified runtime** (`runtime/src/unified.js` + `.mjs`, `test/unified.test.js`):
+  - New `KuhulRuntime` class integrates DOM, DAG, Graph, RAG, and HaaB patterns.
+  - Top-level `kuhul.execute(source, controls)` dispatches through Micronaut/KUHUL π/Extrapolator control methods.
+  - `KastEngine` validates KAST/1 nodes and edges.
+  - `KxmlEngine` executes forward-graph layers in DAG order with output aliasing.
+  - SCXQ2 compression is used as a validity proof after the full pipeline.
+  - New test: `test/unified.test.js`.
+
+- **SCXQ2 compression** (`runtime/src/scxq2.js`, `test/scxq2.test.js`): implements the grammar's `↻ 'scxq2'` law with round-trip, JSON-safe, and deterministic compression tests.
+
+- **Test suite**: 142 tests / 26 suites pass (verified 2026-08-11; the suite previously hung on an uptime-timer leak in the micronaut runtime and never printed a summary).
+
+---
+
+# Latest Updates (2026-08-11)
+
+- **Micronaut DAG execution fixed** (`runtime/src/micronaut.js`):
+  - `_topologicalSort` returned post-order (children before parents), so every fold executed in reverse: no node received its parents' outputs and output nodes always resolved to `{}`. Reversed into dependency order.
+  - `orchestrate()` now surfaces the task via `context.input`, so DAG input nodes expose the task.
+  - `_executeProcess` hands tools `{ ...parentOutputs, ...taskFields }` plus flattened `{ value: X }` payloads, so tools written against the task shape (`input.spec`, `input.code`, `input.assessment`) work.
+  - Result contract unified: `_executeFold` returns `{ output: <first output node result>, ...nodeIds }` — `result.output` / `result.output.value` now hold for any fold regardless of output-node naming.
+- **Uptime timer leak fixed**: `Micronaut._updateUptime()` scheduled an unbounded recursive `setTimeout` while status was `running`, with no `clearTimeout` anywhere — any micronaut left running kept the Node process alive forever. This is why `npm test` hung after the domains suite and never printed a summary. `stop()`/`start()` now clear the timer; `resume()` restarts the chain; domain adapters wrap each call in `start() → orchestrate() → stop()`.
+- **Action-aware routing**: `_selectFold` now prefers a fold whose name or `metadata.actions` matches `task.action` before falling back to the routing strategy. Domain folds gained `metadata.actions`; added the missing `code_optimize`, `summarize`, and `translate` folds (wiring the previously-unused code-optimize tool); the assessment fold gained a `map_assessment` transform node.
+- **Parser cleanup**: removed the dead `/^(τ|tau)\s+/` branch in `runtime_parser.js` `extractTauUpdates` (a regex that can never match an identifier).
+- **Test suite**: now **142 tests / 26 suites pass** with a clean exit (~2s). `test/domains.test.js` went from 2/10 passing (8 failures, two with 3s retry stalls) to 10/10 in ~130ms.
+- **Still open**: line-numbered runtime error reporting (gap #10); `tsc --noEmit` hangs in this environment (unverified, not micronaut code); the micronaut subsystem and most recent runtime files remain untracked in git; `KUHUL-PI/` is an empty directory; a stray `nul` file sits at repo root.
