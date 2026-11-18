@@ -24,28 +24,19 @@ class RuntimeParser {
     while ((m = PI_RE.exec(this.source)) !== null) {
       const name = m[1];
       const expr = m[2].trim();
-      try {
-        const val = evaluator.eval(expr);
-        π.set(name, val);
-        if (ctx.π) ctx.π.set(name, val);
-      } catch (e) {
-        // fall back to raw string
-        π.set(name, expr.replace(/^['"]|['"]$/g, ''));
-        if (ctx.π) ctx.π.set(name, expr.replace(/^['"]|['"]$/g, ''));
-      }
+      const offset = m.index;
+      const val = evaluator.eval(expr, { filename: this.filename, sourceText: this.source, offset });
+      π.set(name, val);
+      if (ctx.π) ctx.π.set(name, val);
     }
 
     while ((m = TAU_RE.exec(this.source)) !== null) {
       const name = m[1];
       const expr = m[2].trim();
-      try {
-        const val = evaluator.eval(expr);
-        τ.set(name, val);
-        if (ctx.τ) ctx.τ.set(name, val);
-      } catch (e) {
-        τ.set(name, expr.replace(/^['"]|['"]$/g, ''));
-        if (ctx.τ) ctx.τ.set(name, expr.replace(/^['"]|['"]$/g, ''));
-      }
+      const offset = m.index;
+      const val = evaluator.eval(expr, { filename: this.filename, sourceText: this.source, offset });
+      τ.set(name, val);
+      if (ctx.τ) ctx.τ.set(name, val);
     }
 
     return { π, τ };
@@ -60,8 +51,10 @@ class RuntimeParser {
       const glyph = m[1];
       if (!GLYPHS.includes(glyph)) continue;
       const rawArgs = m[2].trim();
-      const args = rawArgs.length === 0 ? [] : splitArgs(rawArgs).map(a => {
-        try { return evaluator.eval(a.trim()); } catch { return tryParseLiteral(a.trim()); }
+      const args = rawArgs.length === 0 ? [] : splitArgs(rawArgs).map((a) => {
+        const expr = a.trim();
+        const offset = m.index;
+        return evaluator.eval(expr, { filename: this.filename, sourceText: this.source, offset });
       });
       calls.push({ glyph, args, source: m[0] });
     }

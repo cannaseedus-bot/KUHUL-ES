@@ -59,4 +59,20 @@ main();
     assert.equal(calls[0].args[1], 100);
     assert.deepEqual(calls[0].args[2], [1, 2, 3]);
   });
+
+  it('annotates unresolved identifiers with source line and column data', () => {
+    const source = `
+π total = base_cost + tax;
+`;
+    const parser = new RuntimeParser(source, 'source.kuhules');
+    const ctx = { π: new Map(), τ: new Map(), locals: new Map() };
+
+    assert.throws(() => parser.extractBindings(ctx), (error) => {
+      assert.equal(error.line, 2);
+      assert.ok(error.column > 0);
+      assert.match(error.message, /source\.kuhules:2:\d+/);
+      assert.match(error.snippet || '', /base_cost/);
+      return true;
+    });
+  });
 });

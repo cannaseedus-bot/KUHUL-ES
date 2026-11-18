@@ -1,6 +1,9 @@
 # KUHUL-ES
 <img src=https://github.com/cannaseedus-bot/KUHUL-PI/blob/main/kuhulpi-micronaut.png>
 
+**Repository:** https://github.com/cannaseedus-bot/KUHUL-ES
+**Clone:** `git clone https://github.com/cannaseedus-bot/KUHUL-ES.git`
+
 ```text
 ⟁ K'UHUL ⟁
 Pop → Wo → Yax → Sek → Ch'en → Xul  (+ Noj: controlled reflection)
@@ -203,6 +206,61 @@ See `..\..\JSON-RUNTIME.md` for the full native artifact inventory and the
 repo-local `programs\` registry (`actions.manifest.json`, `classes.manifest.json`,
 `rpc.manifest.json`, `kuhul_dispatch.json`, `scxq2_tile_upload.json`, and related
 runtime programs).
+
+## Plugin System
+
+kuhul-es is designed to be plugged into. The `KUHULEngine` exposes two plugin surfaces
+and a domain stack that external projects attach to:
+
+```js
+const { KUHULEngine } = require('kuhul-es/runtime/kuhul-e');
+
+const engine = new KUHULEngine();
+
+// Research plugin — called during the fold query to fetch domain evidence
+engine.registerResearch('my-source', async (query) => ({
+  source: 'my-source',
+  content: '...',
+  confidence: 0.85,
+  type: 'fact',
+}));
+
+// Response pattern — ELIZA-style trigger → template + branch steps
+engine.registerPattern('my-pattern', {
+  domain: 'tech',
+  trigger: ['keyword', 'phrase'],
+  template: { prefix: 'Response prefix.', fallback: 'Fallback text.' },
+  branches: { tech: { steps: ['step1', 'step2'] } },
+  weight: 0.9,
+});
+
+// Domain switching — phase-glyph sets per domain
+engine.switchDomain('legal');  // built-in: tech, medical, legal, creative, general
+```
+
+**Compute transport plugins** plug in at the phase dispatch level:
+
+```js
+const { botsTransport } = require('kuhul-es/runtime/transports/bots_transport');
+const { powernautGlslTransport } = require('kuhul-es/runtime/transports/powernaut_glsl_transport');
+const { xvmD3d12Transport } = require('kuhul-es/runtime/transports/xvm_d3d12_transport');
+```
+
+The `bots_transport` routes each C6 phase to a different resident model:
+
+| Phase | Model | Role |
+|-------|-------|------|
+| Pop / Yax / Ch'en | `gemma_complete_mem` — Gemma 1B Q8 (1020 MB) | Perceive / validate / commit |
+| Sek / Xul | `mini_chat` — GPT-2 Q8 (386 MB) | Generate / collapse to answer |
+| Wo | `mini_tool_read` — GPT-2 Q2K (80 MB) | Plan / format tool results |
+
+`bots.py` is spawned once as a persistent JSONL subprocess; requests are serialised
+through a promise queue so concurrent fold phases don't interleave.
+
+The Micronaut Daemon plugs into kuhul-es via `micronaut_bridges.js` and the
+`MicronautFactory.fromXjsonFile()` hydration path. Each `.xjson` model definition is a
+kuhul-es plugin contract — it declares phases, field bindings, and dispatch routes that
+the kuhul-es runtime enforces through the XCFE/1 control vectors.
 
 ## Install
 

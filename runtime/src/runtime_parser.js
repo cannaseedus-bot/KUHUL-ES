@@ -30,14 +30,24 @@ class RuntimeParser {
 
     for (const [name, b] of this.program.πBindings) {
       const raw = this._rawSource(b.source, b.position);
-      const value = Object.freeze(evaluator.eval(raw));
+      const offset = typeof b.position === 'number' ? b.position : this.source.indexOf(raw);
+      const value = Object.freeze(evaluator.eval(raw, {
+        filename: this.filename,
+        sourceText: this.source,
+        offset,
+      }));
       bindings.π.set(name, value);
       if (context.π) context.π.set(name, value);
     }
 
     for (const [name, b] of this.program.τBindings) {
       const raw = this._rawSource(b.source, b.position);
-      const value = evaluator.eval(raw);
+      const offset = typeof b.position === 'number' ? b.position : this.source.indexOf(raw);
+      const value = evaluator.eval(raw, {
+        filename: this.filename,
+        sourceText: this.source,
+        offset,
+      });
       bindings.τ.set(name, value);
       if (context.τ) context.τ.set(name, value);
     }
@@ -54,13 +64,13 @@ class RuntimeParser {
       if (!GLYPH_NAMES.has(call.glyph)) continue;
       const rawArgs = call.rawArgs || call.args.map(a => String(a));
       const args = rawArgs.map((arg, idx) => {
-        // Use raw source if available; fall back to already-parsed value
         const src = typeof arg === 'string' ? arg : String(call.args[idx]);
-        try { return evaluator.eval(src); }
-        catch {
-          // If it does not parse as an expression, return the parsed literal
-          return call.args[idx] !== undefined ? call.args[idx] : arg;
-        }
+        const offset = typeof call.position === 'number' ? call.position : 0;
+        return evaluator.eval(src, {
+          filename: this.filename,
+          sourceText: this.source,
+          offset,
+        });
       });
       calls.push({ glyph: call.glyph, args, source: call.source, position: call.position });
     }
@@ -82,7 +92,11 @@ class RuntimeParser {
           const op = expr.operatorToken.getText();
           if (ts.isIdentifier(expr.left)) {
             const name = expr.left.text;
-            const rhs = evaluator.eval(expr.right.getText());
+            const rhs = evaluator.eval(expr.right.getText(), {
+              filename: this.filename,
+              sourceText: this.source,
+              offset: expr.right.getStart(sourceFile),
+            });
             updates.push({ name, op, value: rhs, position: node.getStart() });
           }
         }

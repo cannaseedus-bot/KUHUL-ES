@@ -10,15 +10,17 @@ class ExpressionEvaluator {
     this.context = context;
   }
 
-  eval(expr) {
-    if (typeof expr !== 'string') return expr;
-    const s = expr.trim();
+  eval(expr, options = {}) {
+    const raw = typeof expr === 'string' ? expr : String(expr ?? '');
+    const sourceText = (options && typeof options === 'object' && options.sourceText) || raw;
+    const baseOffset = (options && typeof options === 'object' && Number.isInteger(options.offset)) ? options.offset : 0;
+    const filename = (options && typeof options === 'object' && options.filename) || 'expr.ts';
+    const s = raw.trim();
     if (!s) return '';
     if (FORBIDDEN.test(s)) {
-      throw new Error('Expression contains forbidden tokens');
+      throw this._annotateError(new Error('Expression contains forbidden tokens'), filename, sourceText, baseOffset + 0);
     }
 
-    // Merge context maps into a plain object for function args
     const scope = Object.create(null);
     if (this.context.π) for (const [k, v] of this.context.π) if (isIdentifier(k)) scope[k] = v;
     if (this.context.τ) for (const [k, v] of this.context.τ) if (isIdentifier(k)) scope[k] = v;
@@ -27,21 +29,50 @@ class ExpressionEvaluator {
     const argNames = Object.keys(scope);
     const argVals = argNames.map(k => scope[k]);
 
-    // Create a function with the scope variables as parameters and Math/JSON whitelisted
     try {
       const fn = new Function(...argNames, 'Math', 'JSON', `"use strict"; return (${s});`);
       return fn(...argVals, WHITELISTED_GLOBALS.Math, WHITELISTED_GLOBALS.JSON);
     } catch (err) {
-      // Try a relaxed fallback: treat as a string literal if it looks like one
       const lit = tryParseLiteral(s);
       if (lit !== null) return lit;
-      throw new Error(`Expression eval error: ${err.message}`);
+      throw this._annotateError(new Error(`Expression eval error: ${err.message}`), filename, sourceText, baseOffset + s.length);
     }
+  }
+
+  _annotateError(error, filename, sourceText = '', offset = 0) {
+    if (!error || typeof error !== 'object') error = new Error(String(error));
+    if (error.__kuhulLocation) return error;
+    const loc = lineColumnAt(sourceText, offset);
+    error.filename = filename;
+    error.line = loc.line;
+    error.column = loc.column;
+    error.location = { filename, line: loc.line, column: loc.column, snippet: loc.snippet };
+    error.source = sourceText;
+    error.snippet = loc.snippet;
+    error.__kuhulLocation = true;
+    const prefix = `${filename}:${loc.line}:${loc.column}`;
+    if (typeof error.message === 'string' && !error.message.startsWith(prefix)) {
+      error.message = `${prefix}: ${error.message}`;
+    }
+    return error;
   }
 }
 
 function isIdentifier(name) {
   return /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name);
+}
+
+function lineColumnAt(sourceText, offset) {
+  const text = sourceText || '';
+  const safeOffset = Math.max(0, Math.min(offset || 0, text.length));
+  const before = text.slice(0, safeOffset);
+  const line = before.split(/\r\n|\r|\n/).length;
+  const lastLineBreak = Math.max(before.lastIndexOf('\n'), before.lastIndexOf('\r'));
+  const column = safeOffset - (lastLineBreak + 1) + 1;
+  const lines = text.split(/\r\n|\r|\n/);
+  const currentLine = lines[Math.max(0, line - 1)] || '';
+  const snippet = `${currentLine}\n${' '.repeat(Math.max(column - 1, 0))}^`;
+  return { line, column, snippet };
 }
 
 function tryParseLiteral(src) {
@@ -54,7 +85,6 @@ function tryParseLiteral(src) {
   if (t === 'false') return false;
   if (t === 'null') return null;
   try {
-    // Try JSON parse for arrays/objects (requires double quotes)
     return JSON.parse(t);
   } catch { return null; }
 }
