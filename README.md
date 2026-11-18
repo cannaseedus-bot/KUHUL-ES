@@ -53,7 +53,7 @@ hash-chained runtime with a real K'UHUL physics engine.
 - **Pluggable compute backends**: GLSL sidecar, Powernaut GLSL Server, XVM D3D12
 - **Native binary archive** (`bin/bin.zip`) with `npm run extract-bin`
 - **Unified runtime** `kuhul.execute()` combining DOM, DAG, Graph, RAG, and HaaB patterns
-- **Formal grammars** under `grammars/`: K'UHUL π, KAST/1, KFOLD/1, KHL/1, XCFE/1, XJSON/1, KXML/1
+- **Formal grammars** under `grammars/`: GML/1, K'UHUL π, KAST/1, KFOLD/1, KHL/1, XCFE/1, XJSON/1, KXML/1
 
 ## Unified runtime
 

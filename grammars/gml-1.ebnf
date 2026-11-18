@@ -1,0 +1,189 @@
+(* ========================================================
+   GML/1 — Graph Map Language, fold-map interface grammar
+   for K'UHUL-ES
+
+   GML = Graph Map Language (NOT graph machine learning).
+   GML is the topology substrate B — the authoritative discrete
+   graph that K'UHUL fold operations traverse.  The "map" in
+   GML names the anamorphism (unfold): the fold map function
+   walks GML edges to generate candidate-continuation structure.
+
+   Relationship to the K'UHUL fold algebra:
+     B          = authoritative discrete topology (this file)
+     M_mu       = VECTOR-µ learned geometry OVER B (not GML)
+     FoldPair   = <M[Y,X], C[Y,X]^T>  (vectors.mml)
+     unfold     = anamorphism walking GML nodes/edges
+     fold       = catamorphism collapsing phase slices (KFOLD/1)
+     Q3×C6      = unfold-graph.gml — phase × topology product
+     law        = topology-before-coordinates
+     law        = GML != VECTOR  (topology ≠ learned geometry)
+     law        = ParsedGraph ≠ VerifiedGraph ≠ B
+
+   Full Khanary grammar (all extensions — geodesic coordinates,
+   Minkowski events, tensor bundles, quantum graphs, training
+   gradients, deductive system, Lorentz boosts):
+     data/grammar/gml.khanary.ebnf   (micronaut-daemon)
+   Full semantic validator:
+     data/grammar/gml.validator.json (micronaut-daemon)
+   C++ parser:  src/world/gml_parser.cpp  (micronaut-daemon)
+   Field DAG:   src/world/field_dag.cpp   (micronaut-daemon)
+
+   This grammar (GML/1) covers only the fold-map subset needed
+   by kuhul-es: graph structure, nodes, edges, relation verbs,
+   WCR weights, phase/epistemic state, and overlay IDs.
+   Unknown attributes are silently accepted (open grammar).
+   ======================================================== *)
+
+(* ── Top level ─────────────────────────────────────────────── *)
+
+GmlDocument  ::= GraphBlock
+GraphBlock   ::= "graph" "[" GraphBody "]"
+GraphBody    ::= { GraphAttr | NodeBlock | EdgeBlock }
+
+(* ── Graph-level attributes ─────────────────────────────────── *)
+
+GraphAttr ::=
+    "directed"      Integer        (* 0 = undirected (default), 1 = directed *)
+  | "id"            Integer        (* optional graph identity *)
+  | "label"         String         (* optional display label *)
+  | "comment"       String         (* free-text annotation; not a line-comment *)
+  | "phase_theta"   Number         (* K'UHUL phase angle θ ∈ ℤ₆ for the graph *)
+  | Ident           Value          (* unknown attributes silently accepted *)
+
+(* ── Node block ─────────────────────────────────────────────── *)
+
+NodeBlock ::= "node" "[" NodeBody "]"
+NodeBody  ::= { NodeAttr }
+
+NodeAttr ::=
+    "id"             Integer        (* required; unique within file *)
+  | "label"          String         (* display name; binds to KHANARY micronaut *)
+  | "x"              Number         (* geodesic vector x-coordinate *)
+  | "y"              Number         (* geodesic vector y-coordinate *)
+  | "z"              Number         (* geodesic vector z-coordinate *)
+  | "confidence"     Number         (* WCR C — epistemic confidence [0,1]; default 1.0 *)
+  | "static_weight"  Number         (* WCR W — structural weight [0,1]; default 1.0 *)
+  | "health"         Number         (* node health [0,1]; default 1.0 *)
+  | "phase_theta"    Number         (* K'UHUL phase θ for fold-map routing *)
+  | "epistemic_state"  EpistemicState
+  | "chen_state"       EpistemicState  (* Ch'en verification state *)
+  | "resolution_state" EpistemicState  (* branch/result resolution state *)
+  | "truth_verdict"    TruthVerdict
+  | "miss_kind"      String         (* observation/retrieval miss subtype *)
+  | "prior_mass"     Number         (* antecedent prior density Λ(θ) [0,1] *)
+  | "risk_bound"     Number         (* expected-risk upper bound [0,1] *)
+  | "mutation"       MutationOp     (* differential NLP mutation state *)
+  | Ident            Value          (* unknown attributes silently accepted *)
+
+(* ── Edge block ─────────────────────────────────────────────── *)
+
+EdgeBlock ::= "edge" "[" EdgeBody "]"
+EdgeBody  ::= { EdgeAttr }
+
+EdgeAttr ::=
+    "id"       Integer        (* optional edge id; needed for dual_twin pairing *)
+  | "source"   Integer        (* required; id of origin node *)
+  | "target"   Integer        (* required; id of destination node *)
+  | "label"    String         (* display label; defaults to verb value if omitted *)
+  | "verb"     RelationVerb   (* KHANARY relation verb — preferred *)
+  | "relation" RelationVerb   (* alias for verb; used only when verb is absent *)
+  | "weight"   Number         (* edge weight; default 1.0 *)
+  | "loss_cost" Number        (* semantic loss L(θ,a) for this transition [0,1] *)
+  | "phase_theta" Number      (* K'UHUL phase θ for fold-map routing *)
+  | "epistemic_state"  EpistemicState
+  | "chen_state"       EpistemicState
+  | "resolution_state" EpistemicState
+  | "truth_verdict"    TruthVerdict
+  | "mutation"   MutationOp   (* differential topology mutation state *)
+  | "dual_twin"  Integer      (* paired inverse/contrastive edge id *)
+  | Ident        Value        (* unknown attributes silently accepted *)
+
+(* ── Relation verbs ─────────────────────────────────────────── *)
+(* Canonical verbs from src/micronaut/relation_isa.h.
+   Non-canonical strings → infer_relation_from_lexical() →
+   RelationCandidate (not VerifiedRelation).
+   law: Representation → Relevance → Candidate → Verification *)
+
+RelationVerb ::=
+    "@related_to"
+  | "@delegates_to"
+  | "@requires"
+  | "@part_of"
+  | "@defines"
+  | "@is_a"
+  | "@causes"
+  | "@contradicts"
+  | "@has_part"
+  | "@has_property"
+  | "@possesses"
+  | "@value"
+  | "@imports"
+  | "@calls"
+  | "@exposes"
+  | String       (* non-canonical; becomes RelationCandidate via infer_relation_from_lexical() *)
+
+(* ── Enumerated values ───────────────────────────────────────── *)
+
+EpistemicState ::= '"' ( "SUPPORTED" | "CONTRADICTED" | "UNKNOWN" | "MISS" ) '"'
+TruthVerdict   ::= '"' ( "SUPPORTED" | "CONTRADICTED" | "UNKNOWN" | "MISS" | "NEGATIVE_EVIDENCE" ) '"'
+MutationOp     ::= '"' ( "insert" | "delete" | "modify" | "unchanged" ) '"'
+
+(* ── Overlay ID convention ───────────────────────────────────── *)
+(* field_dag.cpp generates one FieldNode overlay per GML node.
+   IDs are namespaced by file stem to prevent cross-file collisions.
+   GmlOverlayId = "@node:gml:" FileStem ":" Integer
+   FileStem is derived from filename: lowercase, non-alnum → '_'
+   Example: data/kuhul-pi.gml  →  @node:gml:kuhul_pi:3        *)
+
+(* ── Validation grades ───────────────────────────────────────── *)
+(*   PARSED   = Syntactically valid per this grammar.
+     VALID    = All structural + relation + WCR + epistemic
+                checks pass (see gml.validator.json).
+     ADMITTED = VerifiedGraph accepted into B' via
+                Proposal → Ch'en → XCFE → XulGate.
+                ADMITTED is assigned by the Xul commit path,
+                not by this grammar or gml.validator.json.    *)
+
+(* ── Authority boundary ──────────────────────────────────────── *)
+(*   GML files are topology contracts, not truth certificates.
+     semantic_authority = false  for all GML projections.
+     topology mutation  requires Ch'en → XCFE → Xul commit.
+     VECTOR-µ / METRIC-µ may learn geometry OVER B; they cannot
+     redefine B.  A VerifiedGraph is a necessary but not sufficient
+     condition for topology admission.                           *)
+
+(* ── Value types ─────────────────────────────────────────────── *)
+
+Value   ::= Integer | Float | String | Block
+Block   ::= "[" { Ident Value } "]"
+
+Number  ::= Float | Integer
+Float   ::= [ Sign ] Digits "." { Digit } [ Exponent ]
+          | [ Sign ] Digits Exponent
+Integer ::= [ Sign ] Digits
+Sign    ::= "+" | "-"
+Exponent ::= ( "e" | "E" ) [ Sign ] Digits
+Digits  ::= Digit { Digit }
+Digit   ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+String      ::= '"' { StringChar } '"'
+StringChar  ::= ? any UTF-8 character except '"' and '\' ?
+              | '\' EscapeSeq
+EscapeSeq   ::= '"' | '\' | "n" | "t" | ? any other char — passed through literally ?
+
+Ident  ::= ( Letter | "_" ) { Letter | Digit | "_" }
+Letter ::= ? ASCII letter a-z or A-Z ?
+
+(* Block comments are lexer-level (insignificant).
+   There is no line-comment syntax (# or //);
+   the "comment" key is a string attribute, not lexer syntax. *)
+BlockComment ::= "(*" { ? any character except "*)" ? } "*)"
+
+(* ── Token order (match priority) ───────────────────────────── *)
+TOKEN_COMMENT  ::= BlockComment
+TOKEN_STRING   ::= String
+TOKEN_FLOAT    ::= Float
+TOKEN_INTEGER  ::= Integer
+TOKEN_IDENT    ::= Ident
+TOKEN_LBRACKET ::= "["
+TOKEN_RBRACKET ::= "]"
