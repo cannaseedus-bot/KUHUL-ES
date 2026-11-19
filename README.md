@@ -44,6 +44,8 @@ A K'UHUL program isn't a list of instructions — it's a constrained topology of
 
 The six phases form a **hylomorphism**: Sek unfolds candidate structure through GML graph traversal (anamorphism); Ch'en proves and XCFE authorizes; Xul collapses admitted results into committed state (catamorphism). Pop/Wo/Yax handle ingress, context, and field expansion before the unfold begins.
 
+K'UHUL treats graph topology as a **machine-executable computational space**. Nodes encode operations and state, edges encode relationships and dependencies, and phase-governed traversal transforms that space without requiring any visual rendering. Glyphs (`Pop`, `Wo`, `Yax`, `Sek`, `Ch'en`, `Xul`) are the executable instructions of that program; `pi`/`tau` bindings are its immutable/temporal state references; phase semantics govern when each operator may execute. The computational world is the graph's relational structure — not any visual or geometric rendering of it.
+
 ## Features
 
 - **Phase-glyph runtime**: `Pop → Wo → Yax → Sek → Ch'en → Xul` (+ `Noj` reflection)
