@@ -38,9 +38,11 @@ See `docs/kux_v1_canonical.md` for the K-UX layer law and constraints, and
 
 **K'UHUL-ES: ECMAScript syntax with K'UHUL semantics.**
 
-Deterministic, physics-first programming for JavaScript developers. Write K'UHUL
-programs with `pi`/`tau` bindings and `yield*` glyph calls; execute through a
-hash-chained runtime with a real K'UHUL physics engine.
+**K'UHUL is a graph-native, phase-governed computational language and runtime in which graph topology defines program structure, glyphs and node operators encode executable semantics, and a controlled hylomorphic cycle unfolds candidate structures, validates their authority, and folds admitted results into committed state.**
+
+A K'UHUL program isn't a list of instructions — it's a constrained topology of possible transformations. Execution is the phase-governed traversal and resolution of that topology. kuhul-es is the ECMAScript surface for that runtime: `pi`/`tau` bindings are the immutable/temporal graph references; `yield*` glyph calls are the phase transitions; the TypeScript compiler (`ts.createSourceFile()`) is the KHL interpreter that walks the program AST.
+
+The six phases form a **hylomorphism**: Sek unfolds candidate structure through GML graph traversal (anamorphism); Ch'en proves and XCFE authorizes; Xul collapses admitted results into committed state (catamorphism). Pop/Wo/Yax handle ingress, context, and field expansion before the unfold begins.
 
 ## Features
 
