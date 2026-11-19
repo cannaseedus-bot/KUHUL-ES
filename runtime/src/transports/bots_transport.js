@@ -1,11 +1,17 @@
 // runtime/src/transports/bots_transport.js
 //
 // Transport adapter that routes fold phase dispatch to bots.py JSONL subprocess.
-// All three GPT-2/Gemma models load once and stay resident (1486 MB total):
+// Model backends (C:\Users\canna\.models):
 //
-//   Pop  / Yax / Ch'en  →  gemma_complete_mem   (Gemma 1B Q8,  1020 MB — reason/memory)
-//   Sek  / Xul          →  mini_chat            (GPT-2 Q8,      386 MB — text generation)
-//   Wo                  →  mini_tool_read       (GPT-2 Q2K,      80 MB — tool response)
+//   Pop / Wo / Yax / Ch'en  →  gemma        (Gemma 3 1B QAT-Q4 — key grammar words,
+//                                             questions, and vectors; light + accurate)
+//   Sek / Xul               →  qwen         (Qwen3 1.7B-Q8 / 4B-Q8 — heavy lifting,
+//                                             complex generation and final answer)
+//
+// EmbeddingGemma 2 (HuggingFace hub) is the embedding backend for semantic scoring
+// (S(g,c) in ConceptFieldAccumulator) — called via gemma_embed task, not phase-routed.
+// Native inference drivers: qwen_infer_driver.dll, DirectML.dll, d3d11_infer.dll,
+// gl_infer_driver.dll (C:\Users\canna\.micronaut_daemon\drivers\).
 //
 // bots.py is spawned once as a persistent JSONL process; requests are serialised
 // through a promise queue so concurrent fold phases don't interleave.
@@ -17,13 +23,13 @@ const path      = require('path');
 
 // Phase → bots task mapping (overridable via opts.phaseMap)
 const DEFAULT_PHASE_MAP = {
-  Pop:    'gemma',        // perceive — Gemma reasons over memory/context
-  Wo:     'mini_tool_read', // plan/tool — Q2K reader formats tool results
-  Yax:    'gemma',        // validate — Gemma branches on evidence
-  Sek:    'mini_chat',    // execute/generate — base Q8 produces text
-  "Ch'en": 'gemma',      // commit — Gemma records conclusions
+  Pop:    'gemma',   // perceive — Gemma 3 1B: corpus entry, key grammar words
+  Wo:     'gemma',   // plan — Gemma 3 1B: questions, word vectors, tool intake
+  Yax:    'gemma',   // validate — Gemma 3 1B: field expansion, evidence branching
+  Sek:    'qwen',    // generate — Qwen3: heavy lifting, proposal generation
+  "Ch'en": 'gemma', // verify — Gemma 3 1B: accurate verification, key grammar
   Chen:   'gemma',
-  Xul:    'mini_chat',    // collapse — base Q8 compresses to final answer
+  Xul:    'qwen',    // commit — Qwen3: heavy lifting, final answer generation
 };
 
 function botsTransport(opts = {}) {
@@ -145,41 +151,43 @@ function botsTransport(opts = {}) {
       const botTask  = _phaseToTask(phase, payload.task);
 
       let botsPayload;
-      if (botTask === 'mini_chat') {
+      let botsTask;
+      if (botTask === 'qwen') {
+        // Qwen3 — heavy lifting: proposal generation (Sek) and final answer (Xul)
+        botsTask = 'qwen_complete';
         botsPayload = {
           prompt:      payload.prompt || payload.question || '',
-          max_tokens:  payload.max_tokens || 120,
-          temperature: payload.temperature || 0.5,
+          max_tokens:  payload.max_tokens || 256,
+          temperature: payload.temperature || 0.6,
           top_k:       payload.top_k || 40,
         };
-      } else if (botTask === 'mini_tool_read') {
-        botsPayload = {
-          tools_json:    payload.tools_json || '[]',
-          question:      payload.question   || '',
-          tool_call:     payload.tool_call  || '',
-          tool_response: payload.tool_response || '',
-        };
       } else if (botTask === 'gemma') {
-        // route to gemma_complete_mem via the memory-backed task
+        // Gemma 3 1B — key grammar words, questions, vectors, verification
+        botsTask = 'gemma_complete';
         botsPayload = { prompt: payload.prompt || payload.question || '' };
+      } else if (botTask === 'gemma_embed') {
+        // EmbeddingGemma 2 — semantic scoring S(g,c) for ConceptFieldAccumulator
+        botsTask = 'gemma_embed';
+        botsPayload = { text: payload.text || payload.prompt || '' };
       } else {
         // pass-through for explicit task override
+        botsTask = botTask;
         botsPayload = payload;
       }
 
       try {
-        const r = await _send(botTask === 'gemma' ? 'gemma_complete' : botTask, botsPayload);
+        const r = await _send(botsTask, botsPayload);
         // fire-and-forget: log this semantic exchange to jrom-micronaut/temp/semantic_replay.jsonl
         _send('semantic_log', { entry: {
           kind:   'fold_dispatch',
           phase,
-          model:  botTask,
+          model:  botsTask,
           input:  (botsPayload.prompt || botsPayload.question || '').slice(0, 300),
           output: (r?.answer || r?.text || '').slice(0, 300),
         }}).catch(() => {});
-        return { ok: true, phase, model: botTask, data: r };
+        return { ok: true, phase, model: botsTask, data: r };
       } catch (e) {
-        return { ok: false, phase, model: botTask, error: e.message };
+        return { ok: false, phase, model: botsTask, error: e.message };
       }
     }
 
